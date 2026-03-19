@@ -11,7 +11,9 @@ $method = $_SERVER["REQUEST_METHOD"];
 if ($method == "GET" && isset($_GET["action"])) {
     switch ($_GET["action"]) {
         case "search":
-            $stmt = $pdo->prepare("SELECT * FROM articles WHERE id = :id");
+            $stmt = $pdo->prepare(
+                "SELECT articles.*, categories.nom AS cat_nom, utilisateurs.nom AS util_nom FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id;",
+            );
             $stmt->execute([":id" => $_GET["id"]]);
             $article = $stmt->fetch(PDO::FETCH_ASSOC);
 
