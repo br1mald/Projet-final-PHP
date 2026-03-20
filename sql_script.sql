@@ -40,7 +40,7 @@ INSERT INTO utilisateurs (nom, prenom, login, mot_de_passe, role) VALUES
 ('Fall', 'Aminata', 'aminata', '$2y$10$I3qVivYs19ZKGnZ/Dq32K.nRIykcB/Gb0MeA4NvSEpbxwtkzQwHmS', 'editeur');
 
 
-INSERT INTO articles (titre, description_courte, contenu, categorie_id, auteur_id) VALUES
+INSERT INTO articles (titre, description, contenu, categorie_id, auteur_id) VALUES
 (
     'L''intelligence artificielle en Afrique',
     'Les avancées de l''IA transforment le continent africain.',
