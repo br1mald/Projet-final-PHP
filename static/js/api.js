@@ -1,6 +1,6 @@
 const API_BASE = "/final_project/api";
 
-async function apiFetch(endpoint, options = {}) {
+export async function apiFetch(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
@@ -15,24 +15,24 @@ async function apiFetch(endpoint, options = {}) {
   return data;
 }
 
-function apiGet(endpoint) {
+export function apiGet(endpoint) {
   return apiFetch(endpoint);
 }
 
-function apiPost(endpoint, body) {
+export function apiPost(endpoint, body) {
   return apiFetch(endpoint, {
     method: "POST",
     body: JSON.stringify(body),
   });
 }
 
-function apiPut(endpoint, body) {
+export function apiPut(endpoint, body) {
   return apiFetch(endpoint, {
     method: "PUT",
     body: JSON.stringify(body),
   });
 }
 
-function apiDelete(endpoint) {
+export function apiDelete(endpoint) {
   return apiFetch(endpoint, { method: "DELETE" });
 }

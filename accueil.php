@@ -9,7 +9,6 @@ require_once "menu.php";
 
 <div class="pagination"></div>
 
-<script src="static/js/api.js"></script>
-<script src="static/js/articles.js"></script>
+<script type="module" src="static/js/articles.js"></script>
 
 <?php require_once "footer.php"; ?>
