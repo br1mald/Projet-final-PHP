@@ -59,3 +59,6 @@ INSERT INTO articles (titre, description, contenu, categorie_id, auteur_id) VALU
     'Le Sénégal lance une réforme ambitieuse de son système éducatif. Parmi les mesures annoncées : la modernisation des programmes, l''intégration du numérique dans les classes et le renforcement de la formation des enseignants. Cette réforme vise à mieux préparer les élèves aux défis du 21e siècle.',
     4, 1
 );
+
+-- Ajouter l'url d'une image pour chaque article
+ALTER TABLE articles ADD COLUMN image VARCHAR(255) DEFAULT NULL;

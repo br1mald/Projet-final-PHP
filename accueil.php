@@ -3,11 +3,11 @@ require_once "entete.php";
 require_once "menu.php";
 ?>
 
-<main id="articles-container">
+<main class="articles-container">
     <p>Chargement des articles...</p>
 </main>
 
-<div id="pagination"></div>
+<div class="pagination"></div>
 
 <script src="static/js/api.js"></script>
 <script src="static/js/articles.js"></script>

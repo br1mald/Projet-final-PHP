@@ -1,9 +1,9 @@
 <?php
 /** @var PDO $pdo */
 
-require_once __DIR__ . "../includes/db.php";
-require_once __DIR__ . "../includes/response.php";
-require_once __DIR__ . "../config.php";
+require_once __DIR__ . "/../includes/db.php";
+require_once __DIR__ . "/../includes/response.php";
+require_once __DIR__ . "/../config.php";
 
 $method = $_SERVER["REQUEST_METHOD"];
 

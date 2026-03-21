@@ -25,7 +25,7 @@ if ($method == "GET" && isset($_GET["action"])) {
             break;
         case "latest":
             $stmt = $pdo->query(
-                "SELECT * FROM articles ORDER BY date_publication DESC LIMIT 2;",
+                "SELECT * FROM articles ORDER BY date_publication DESC LIMIT 3;",
             );
             $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
