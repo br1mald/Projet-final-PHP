@@ -25,7 +25,7 @@ if ($method == "GET" && isset($_GET["action"])) {
             break;
         case "latest":
             $stmt = $pdo->query(
-                "SELECT * FROM articles ORDER BY date_publication DESC LIMIT 3 ",
+                "SELECT * FROM articles ORDER BY date_publication DESC LIMIT 2;",
             );
             $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -35,6 +35,28 @@ if ($method == "GET" && isset($_GET["action"])) {
                 json_error("Article non trouvé", 400);
             }
             break;
+        case "category_filter":
+            $stmt = $pdo->prepare(
+                "SELECT * FROM articles WHERE categorie_id = :id;",
+            );
+            $stmt->execute(["id" => $_GET["categorie_id"]]);
+            $liste_articles = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($liste_articles) {
+                json_response($liste_articles);
+            } else {
+                json_error("Aucun article trouvé", 400);
+            }
+            break;
+        case "all":
+            $stmt = $pdo->query("SELECT * FROM articles;");
+            $all_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($all_articles) {
+                json_response($all_articles);
+            } else {
+                json_error("Aucun article trouvé", 400);
+            }
     }
 }
 ?>
