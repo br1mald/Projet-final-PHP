@@ -123,5 +123,33 @@ if ($method === "GET" && isset($_GET["action"])) {
         echo json_encode(["error" => 'Impossible d\'ajouter l\'article.']);
         exit();
     }
+} elseif ($method === "DELETE") {
+    $raw = file_get_contents("php://input");
+    $body = json_decode($raw, true);
+
+    $article_id = $body["articleId"] ?? null;
+    $errors = [];
+    if (!is_numeric($article_id)) {
+        $errors["article_id"] = "Article invalide";
+    }
+
+    if (!empty($errors)) {
+        header("Content-Type: application/json", true, 400);
+        echo json_encode(["errors" => $errors]);
+        exit();
+    }
+
+    $stmt = $pdo->prepare("DELETE FROM articles WHERE id = :id;");
+    $success = $stmt->execute([":id" => $article_id]);
+
+    if ($success) {
+        header("Content-type: application/json", true, 200);
+        echo json_encode(["ok" => true, "id" => $article_id]);
+        exit();
+    } else {
+        header("Content-type: application/json", true, 400);
+        echo json_encode(["error" => "Impossible de supprimer l' article"]);
+        exit();
+    }
 }
 ?>

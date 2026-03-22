@@ -1,11 +1,12 @@
 import { showFormErrors, escapeHTML } from "./validation.js";
-import { apiGet, apiPost } from "./api.js";
+import { apiGet, apiPost, apiDelete } from "./api.js";
 
 const appBase = "/final_project"; // changer selon la structure du serveur
 
 const articlesContainer = document.querySelector(".articles-container");
 const formSelectField = document.querySelector(".form-select-field");
 const postForm = document.querySelector("form[action='../api/articles.php']");
+const deleteFormContainer = document.querySelector(".delete-form-container");
 
 console.log("Hello"); // debugging, file wasn't loading
 
@@ -80,20 +81,26 @@ async function populateSelectForm() {
   });
 }
 
-function validatePayload(payload) {
+function validatePayload(payload, method) {
   const errors = {};
-  if (!payload.titre || payload.titre.trim().length < 3) {
-    errors.titre = "Le titre doit contenir au moins 3 caractères";
-  }
-  if (!payload.description || payload.description.trim().length < 10) {
-    errors.description =
-      "La description courte doit contenir au moins 10 caractères.";
-  }
-  if (!payload.contenu || payload.contenu.trim().length < 20) {
-    errors.contenu = "Le contenu doit contenir au moins 20 caractères.";
-  }
-  if (!payload.categorie_id || isNaN(Number(payload.categorie_id))) {
-    errors.categorie_id = "Veuillez choisir une catégorie valide.";
+  if (method === "post") {
+    if (!payload.titre || payload.titre.trim().length < 3) {
+      errors.titre = "Le titre doit contenir au moins 3 caractères";
+    }
+    if (!payload.description || payload.description.trim().length < 10) {
+      errors.description =
+        "La description courte doit contenir au moins 10 caractères.";
+    }
+    if (!payload.contenu || payload.contenu.trim().length < 20) {
+      errors.contenu = "Le contenu doit contenir au moins 20 caractères.";
+    }
+    if (!payload.categorie_id || isNaN(Number(payload.categorie_id))) {
+      errors.categorie_id = "Veuillez choisir une catégorie valide.";
+    }
+  } else if (method === "delete") {
+    if (!payload.articleId || isNaN(Number(payload.articleId))) {
+      errors.articleId = "Veuillez choisir un article valide.";
+    }
   }
 
   return errors;
@@ -110,7 +117,7 @@ function submitPostForm() {
       date_publication: postForm.date.value,
     };
 
-    const errors = validatePayload(payload);
+    const errors = validatePayload(payload, "post");
     showFormErrors(postForm, errors);
 
     if (Object.keys(errors).length > 0) return;
@@ -130,9 +137,59 @@ function submitPostForm() {
   });
 }
 
+async function populateDeleteForm() {
+  const data = await apiGet("articles.php?action=all");
+  data.forEach((article) => {
+    const form = document.createElement("form");
+    form.className = "delete-form";
+
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "article";
+    input.value = article.id;
+    const submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.textContent = article.titre;
+
+    form.appendChild(input);
+    form.appendChild(submitButton);
+
+    deleteFormContainer.appendChild(form);
+  });
+  submitDeleteForm();
+}
+
+function submitDeleteForm() {
+  const deleteForms = document.querySelectorAll(".delete-form"); // might want to do this for the post form too.
+  deleteForms.forEach((deleteForm) => {
+    deleteForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        articleId: deleteForm.article.value,
+      };
+
+      const errors = validatePayload(payload, "delete");
+      showFormErrors(deleteForm, errors);
+
+      if (Object.keys(errors).length > 0) return;
+
+      try {
+        const res = await apiDelete(`articles.php`, payload);
+        console.log("deleted", res);
+        showFormErrors(deleteForm, { success: "Article supprimé avec succès" });
+
+        setTimeout(() => deleteForm.remove(), 1500);
+      } catch (err) {
+        console.error(err);
+        showFormErrors(deleteForm, { server: err.message || "Erreur serveur" });
+      }
+    });
+  });
+}
+
 console.log(window.location.pathname);
 if (window.location.pathname.includes("accueil.php")) getLatestArticles();
-// if (window.location.pathname.includes("accueil.php")) getAllArticles();
+// if (window.location.pathname.includes("accueil.php")) getAllArticles(); testing
 
 if (window.location.pathname.includes("detail.php")) {
   const params = new URLSearchParams(window.location.search);
@@ -146,4 +203,8 @@ if (window.location.pathname.includes("/articles/ajouter.php")) {
   dateField.value = currentTime.toISOString().slice(0, 19).replace("T", " ");
   populateSelectForm();
   submitPostForm();
+}
+
+if (window.location.pathname.includes("/articles/supprimer.php")) {
+  populateDeleteForm();
 }

@@ -33,6 +33,9 @@ export function apiPut(endpoint, body) {
   });
 }
 
-export function apiDelete(endpoint) {
-  return apiFetch(endpoint, { method: "DELETE" });
+export function apiDelete(endpoint, body) {
+  return apiFetch(endpoint, {
+    method: "DELETE",
+    body: JSON.stringify(body),
+  });
 }
