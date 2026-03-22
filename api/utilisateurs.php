@@ -7,7 +7,7 @@ require_once __DIR__ . "/../config.php";
 
 $method = $_SERVER["REQUEST_METHOD"];
 
-if ($method = "GET" && isset($_GET["action"])) {
+if ($method === "GET" && isset($_GET["action"])) {
     switch ($_GET["action"]) {
         case "all":
             $stmt = $pdo->query("SELECT * FROM utilisateurs");
