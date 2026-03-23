@@ -1,8 +1,9 @@
-import { apiGet, apiPost, apiDelete } from "./api.js";
+import { apiGet, apiPost, apiDelete, apiPatch } from "./api.js";
 import { showFormErrors } from "./validation.js";
 
 const usersContainer = document.querySelector(".utilisateurs-container");
 const deleteFormContainer = document.querySelector(".delete-form-container");
+const patchFormContainer = document.querySelector(".patch-form-container");
 const postForm = document.querySelector(
   "form[action='../api/utilisateurs.php']",
 );
@@ -56,6 +57,33 @@ function validatePayload(payload, method) {
       errors["password"] =
         "Le mot de passe doit contenir au moins 8 caractères";
     }
+  } else if (method === "delete") {
+    if (isNaN(payload["userId"]))
+      errors["userId"] = "Veuillez choisir un article valide";
+  } else if (method === "patch") {
+    if (payload.attribute && payload.value && payload.id) {
+      if (payload.attribute === "id") errors.id = "Attribut non autorisé";
+      else if (payload.attribute === "nom" && payload.value.trim().length < 3)
+        errors.nom = "Le nom doit contenir au moins 3 caractères";
+      else if (
+        payload.attribute === "prenom" &&
+        payload.value.trim().length < 3
+      )
+        errors.prenom = "Le prénom doit contenir au moins 3 caractères.";
+      else if (payload.attribute === "login" && payload.value.trim().length < 5)
+        errors.contenu = "Le login doit contenir au moins 5 caractères.";
+      else if (
+        payload.attribute === "password" &&
+        payload.value.trim().length < 8
+      )
+        errors.userId = "Le mot de passe doit contenir au moins 8 caractères.";
+      else if (
+        payload.attribute === "role" &&
+        payload.value != "editeur" &&
+        payload.value != "administrateur"
+      )
+        errors.role = "Rôle invalide";
+    } else errors.attributeValue = "Veuillez choisir un attribut";
   }
 
   return errors;
@@ -90,6 +118,119 @@ function submitPostForm() {
       console.error(err);
       showFormErrors(postForm, { server: err.message || "Erreur survenue" });
     }
+  });
+}
+
+async function populatePatchForm() {
+  const data = await apiGet("utilisateurs.php?action=all");
+  data.forEach((utilisateur) => {
+    const attributes = Object.entries(utilisateur);
+
+    const allowedAttributes = ["nom", "prenom", "login", "role"];
+
+    attributes.forEach((attribute) => {
+      if (!allowedAttributes.includes(attribute[0])) return;
+      if (attribute[0] === "role") {
+        const form = document.createElement("form");
+        form.className = "patch-form";
+
+        const idInput = document.createElement("input");
+        idInput.type = "hidden";
+        idInput.value = utilisateur.id;
+        idInput.name = "userId";
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "hidden";
+        nameInput.value = "role";
+        nameInput.name = "attributeName";
+
+        const select = document.createElement("select");
+        select.name = "attributeValue";
+
+        const editeurOption = document.createElement("option");
+        editeurOption.value = "editeur";
+        editeurOption.textContent = "Éditeur";
+
+        const adminOption = document.createElement("option");
+        adminOption.value = "administrateur";
+        adminOption.textContent = "Administrateur";
+
+        if (utilisateur.role === "editeur") {
+          select.appendChild(editeurOption);
+          select.appendChild(adminOption);
+        } else {
+          select.appendChild(adminOption);
+          select.appendChild(editeurOption);
+        }
+
+        form.appendChild(idInput);
+        form.appendChild(nameInput);
+        form.appendChild(select);
+
+        patchFormContainer.appendChild(form);
+      } else {
+        const form = document.createElement("form");
+        form.className = "patch-form";
+
+        const idInput = document.createElement("input");
+        idInput.type = "hidden";
+        idInput.value = utilisateur.id;
+        idInput.name = "userId";
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "hidden";
+        nameInput.value = attribute[0];
+        nameInput.name = "attributeName";
+
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.value = attribute[1];
+        valueInput.name = "attributeValue";
+
+        form.appendChild(idInput);
+        form.appendChild(nameInput);
+        form.appendChild(valueInput);
+
+        patchFormContainer.appendChild(form);
+      }
+    });
+    const br = document.createElement("br");
+    patchFormContainer.appendChild(br);
+  });
+
+  submitPatchForm();
+}
+
+function submitPatchForm() {
+  const patchForms = document.querySelectorAll(".patch-form");
+  patchForms.forEach((patchForm) => {
+    let event = "submit";
+    if (patchForm.attributeName.value === "role") event = "change";
+    patchForm.addEventListener(event, async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        id: patchForm.userId.value,
+        attribute: patchForm.attributeName.value,
+        value: patchForm.attributeValue.value,
+      };
+
+      const errors = validatePayload(payload, "patch");
+      showFormErrors(patchForm, errors);
+
+      if (Object.keys(errors).length > 0) return;
+
+      try {
+        const res = await apiPatch("utilisateurs.php", payload);
+        console.log("Success", res);
+        showFormErrors(patchForm, {
+          success: "Utilisateur modifié avec succès.",
+        });
+      } catch (err) {
+        console.error(err);
+        showFormErrors(patchForm, { server: err.message || "Erreur serveur." });
+      }
+    });
   });
 }
 
@@ -157,3 +298,5 @@ if (window.location.pathname.includes("/utilisateurs/ajouter.php"))
   submitPostForm();
 if (window.location.pathname.includes("/utilisateurs/supprimer.php"))
   populateDeleteForm();
+if (window.location.pathname.includes("/utilisateurs/modifier.php"))
+  populatePatchForm();

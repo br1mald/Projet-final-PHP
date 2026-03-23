@@ -76,6 +76,7 @@ function submitPostForm() {
 
 async function populatePatchForm() {
   const data = await apiGet("categories.php?action=all");
+
   data.forEach((category) => {
     console.log("found category");
 

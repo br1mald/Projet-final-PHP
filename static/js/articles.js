@@ -166,8 +166,19 @@ async function populatePatchForm() {
   data.forEach((article) => {
     console.log("found article");
     const article_attributes = Object.entries(article);
+
+    const allowedAttributes = [
+      "titre",
+      "description",
+      "contenu",
+      "categorie_id",
+    ];
+
     article_attributes.forEach((attribute) => {
+      if (!allowedAttributes.includes(attribute[0])) return;
+
       console.log(`Found attribute: ${attribute}`);
+
       const form = document.createElement("form");
       form.className = "patch-form";
 

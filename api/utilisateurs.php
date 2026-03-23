@@ -141,6 +141,90 @@ if ($method === "GET" && isset($_GET["action"])) {
         echo json_encode(["error" => "Impossible de supprimer l' utilisateur"]);
         exit();
     }
+} elseif ($method === "PATCH") {
+    $raw = file_get_contents("php://input");
+    $body = json_decode($raw, true);
+
+    $userId = $body["id"];
+    $attribute_name = htmlspecialchars(
+        trim($body["attribute"] ?? ""),
+        ENT_QUOTES,
+        "UTF-8",
+    );
+    $attribute_value = htmlspecialchars(
+        trim($body["value"] ?? ""),
+        ENT_QUOTES,
+        "UTF-8",
+    );
+
+    $errors = [];
+
+    if (!is_numeric($userId)) {
+        $errors["id"] = "Utilisateur invalide";
+    }
+    if (
+        $attribute_name === "nom" &&
+        ($attribute_value === "" || strlen($attribute_value) < 3)
+    ) {
+        $errors["nom"] = "Nom trop court (min 3 caractères).";
+    }
+    if (
+        $attribute_name === "prenom" &&
+        ($attribute_value === "" || strlen($attribute_value) < 3)
+    ) {
+        $errors["prenom"] = "Prénom trop court (min 3 caractères).";
+    }
+    if (
+        $attribute_name === "login" &&
+        ($attribute_value === "" || strlen($attribute_value) < 5)
+    ) {
+        $errors["login"] = "Login trop court (min 5 caractères).";
+    }
+    if (
+        $attribute_name === "mot_de_passe" &&
+        ($attribute_value === "" || strlen($attribute_value) < 8)
+    ) {
+        $errors["mot_de_passe"] = "Mot de passe trop court (min 8 caractères).";
+    }
+    if (
+        $attribute_name === "role" &&
+        ($attribute_value != "editeur" && $attribute_value != "administrateur")
+    ) {
+        $errors["role"] = "Rôle invalide.";
+    }
+
+    if (!empty($errors)) {
+        header("Content-Type: application/json", true, 400);
+        echo json_encode(["errors" => $errors]);
+        exit();
+    }
+
+    $allowed_attributes = ["nom", "prenom", "login", "mot_de_passe", "role"];
+    if (!in_array($attribute_name, $allowed_attributes)) {
+        header("Content-Type: application/json", true, 400);
+        echo json_encode([
+            "errors" => ["attribute" => "Attribut non autorisé."],
+        ]);
+        exit();
+    }
+
+    $stmt = $pdo->prepare(
+        "UPDATE utilisateurs SET {$attribute_name} = :value WHERE id = :id;",
+    );
+    $success = $stmt->execute([
+        ":value" => $attribute_value,
+        ":id" => $userId,
+    ]);
+
+    if ($success) {
+        header("Content-type: application/json", true, 200);
+        echo json_encode(["ok" => true, "id" => $userId]);
+        exit();
+    } else {
+        header("Content-type: application/json", true, 400);
+        echo json_encode(["error" => "Impossible de modifier l'utilisateur"]);
+        exit();
+    }
 }
 
 ?>
