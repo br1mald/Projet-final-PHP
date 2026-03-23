@@ -222,13 +222,12 @@ function submitPatchForm() {
       const errors = validatePayload(payload, "patch");
       showFormErrors(patchForm, errors);
 
-      if (Object.keys(errors) > 0) return;
+      if (Object.keys(errors).length > 0) return;
 
       try {
         const res = await apiPatch("articles.php", payload);
         console.log("Success", res);
         showFormErrors(patchForm, { success: "Article modifié avec succès." });
-        setTimeout(() => populatePatchForm(), 1000);
       } catch (err) {
         console.error(err);
         showFormErrors(patchForm, { server: err.message || "Erreur serveur" });

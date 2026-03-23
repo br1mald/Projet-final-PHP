@@ -156,8 +156,16 @@ if ($method === "GET" && isset($_GET["action"])) {
     $body = json_decode($raw, true);
 
     $article_id = $body["id"];
-    $attribute_name = $body["attribute"];
-    $attribute_value = $body["value"];
+    $attribute_name = htmlspecialchars(
+        trim($body["attribute"] ?? ""),
+        ENT_QUOTES,
+        "UTF-8",
+    );
+    $attribute_value = htmlspecialchars(
+        trim($body["value"] ?? ""),
+        ENT_QUOTES,
+        "UTF-8",
+    );
 
     $errors = [];
 

@@ -21,7 +21,7 @@ if ($method === "GET" && isset($_GET["action"])) {
             }
             break;
         case "search":
-            $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = :id");
+            $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = :id ;");
             $stmt->execute([":id" => $_GET["id"]]);
 
             $categorie = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -96,6 +96,47 @@ if ($method === "GET" && isset($_GET["action"])) {
     } else {
         header("Content-type: application/json", true, 400);
         echo json_encode(["error" => "Impossible de supprimer la catégorie"]);
+        exit();
+    }
+} elseif ($method === "PATCH") {
+    $raw = file_get_contents("php://input");
+    $body = json_decode($raw, true);
+
+    $category_id = $body["id"] ?? null;
+    $category_value = htmlspecialchars(
+        trim($body["value"] ?? ""),
+        ENT_QUOTES,
+        "UTF-8",
+    );
+
+    $errors = [];
+
+    if (!is_numeric($category_id)) {
+        $errors["category_id"] = "Catégorie invalide";
+    }
+    if ($category_value === "" || strlen($category_value) < 3) {
+        $errors["nom"] = "Nom invalide (min 3 caractères)";
+    }
+
+    if (!empty($errors)) {
+        header("Content-type: application/json", true, 400);
+        echo json_encode(["errors" => $errors]);
+        exit();
+    }
+
+    $stmt = $pdo->prepare("UPDATE categories SET nom = :nom WHERE id = :id;");
+    $success = $stmt->execute([
+        ":nom" => $category_value,
+        ":id" => $category_id,
+    ]);
+
+    if ($success) {
+        header("Content-type: application/json", true, 200);
+        echo json_encode(["ok" => true, "id" => $category_id]);
+        exit();
+    } else {
+        header("Content-type: application/json", true, 400);
+        echo json_encode(["error" => "Impossible de modifier la catégorie"]);
         exit();
     }
 }

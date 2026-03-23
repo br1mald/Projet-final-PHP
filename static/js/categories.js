@@ -1,8 +1,9 @@
 import { showFormErrors } from "./validation.js";
-import { apiGet, apiPost, apiDelete } from "./api.js";
+import { apiGet, apiPost, apiPatch, apiDelete } from "./api.js";
 
 const categoriesContainer = document.querySelector(".categories-container");
 const postForm = document.querySelector("form[action='../api/categories.php']");
+const patchFormContainer = document.querySelector(".patch-form-container");
 const deleteFormContainer = document.querySelector(".delete-form-container");
 
 console.log("Hello"); // debugging
@@ -29,12 +30,18 @@ function validatePayload(payload, method) {
   const errors = {};
   if (method === "post") {
     if (!payload.nom || payload.nom.trim().length < 3) {
-      errors.titre = "Le nom doit contenir au moins 3 caractères";
+      errors.nom = "Le nom doit contenir au moins 3 caractères";
     }
   } else if (method === "delete") {
     if (!payload.categoryId || isNaN(Number(payload.categoryId))) {
       errors.categoryId = "Veuillez choisir une catégorie valide.";
     }
+  } else if (method === "patch") {
+    if (payload.id && payload.value) {
+      if (isNaN(Number(payload.id))) errors["id"] = "Id invalide";
+      if (payload.value.trim().length < 3)
+        errors.nom = "Le nom doit contenir au moins 3 caractères";
+    } else errors.payload = "Aucune valeur reçue.";
   }
 
   return errors;
@@ -64,6 +71,65 @@ function submitPostForm() {
       console.error(err);
       showFormErrors(postForm, { server: err.message || "Erreur serveur" });
     }
+  });
+}
+
+async function populatePatchForm() {
+  const data = await apiGet("categories.php?action=all");
+  data.forEach((category) => {
+    console.log("found category");
+
+    const form = document.createElement("form");
+    form.className = "patch-form";
+
+    const valueInput = document.createElement("input");
+    valueInput.type = "text";
+    valueInput.value = category.nom;
+    valueInput.name = "nom";
+
+    const idInput = document.createElement("input");
+    idInput.type = "hidden";
+    idInput.value = category.id;
+    idInput.name = "categoryId";
+
+    form.appendChild(valueInput);
+    form.appendChild(idInput);
+
+    patchFormContainer.appendChild(form);
+
+    const br = document.createElement("br");
+    patchFormContainer.appendChild(br);
+  });
+  submitPatchForm();
+}
+
+function submitPatchForm() {
+  const patchForms = document.querySelectorAll(".patch-form");
+  patchForms.forEach((patchForm) => {
+    patchForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        id: patchForm.categoryId.value,
+        value: patchForm.nom.value,
+      };
+
+      const errors = validatePayload(payload, "patch");
+      showFormErrors(patchForm, errors);
+
+      if (Object.keys(errors).length > 0) return;
+
+      try {
+        const res = await apiPatch("categories.php", payload);
+        console.log("Success", res);
+        showFormErrors(patchForm, {
+          success: "Catégorie modifiée avec succès.",
+        });
+      } catch (err) {
+        console.error(err);
+        showFormErrors(patchForm, { server: err.message || "Erreur serveur" });
+      }
+    });
   });
 }
 
@@ -126,3 +192,5 @@ if (window.location.pathname.includes("/categories/ajouter.php"))
   submitPostForm();
 if (window.location.pathname.includes("/categories/supprimer.php"))
   populateDeleteForm();
+if (window.location.pathname.includes("/categories/modifier.php"))
+  populatePatchForm();
