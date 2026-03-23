@@ -26,9 +26,9 @@ export function apiPost(endpoint, body) {
   });
 }
 
-export function apiPut(endpoint, body) {
+export function apiPatch(endpoint, body) {
   return apiFetch(endpoint, {
-    method: "PUT",
+    method: "PATCH",
     body: JSON.stringify(body),
   });
 }

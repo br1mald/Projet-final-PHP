@@ -1,11 +1,12 @@
 import { showFormErrors, escapeHTML } from "./validation.js";
-import { apiGet, apiPost, apiDelete } from "./api.js";
+import { apiGet, apiPost, apiPatch, apiDelete } from "./api.js";
 
 const appBase = "/final_project"; // changer selon la structure du serveur
 
 const articlesContainer = document.querySelector(".articles-container");
 const formSelectField = document.querySelector(".form-select-field");
 const postForm = document.querySelector("form[action='../api/articles.php']");
+const patchFormContainer = document.querySelector(".patch-form-container");
 const deleteFormContainer = document.querySelector(".delete-form-container");
 
 console.log("Hello"); // debugging, file wasn't loading
@@ -101,6 +102,29 @@ function validatePayload(payload, method) {
     if (!payload.articleId || isNaN(Number(payload.articleId))) {
       errors.articleId = "Veuillez choisir un article valide.";
     }
+  } else if (method === "patch") {
+    if (payload.attribute && payload.value && payload.id) {
+      if (payload.attribute === "id" && isNaN(Number(payload.value)))
+        errors.id = "Article invalide";
+      else if (payload.attribute === "titre" && payload.value.trim().length < 3)
+        errors.titre = "Le titre doit contenir au moins 3 caractères";
+      else if (
+        payload.attribute === "description" &&
+        payload.value.trim().length < 10
+      )
+        errors.description =
+          "La description courte doit contenir au moins 10 caractères.";
+      else if (
+        payload.attribute === "contenu" &&
+        payload.value.trim().length < 20
+      )
+        errors.contenu = "Le contenu doit contenir au moins 20 caractères.";
+      else if (
+        payload.attribute === "category_id" &&
+        isNaN(Number(payload.value))
+      )
+        errors.categorie_id = "Veuillez choisir une catégorie valide.";
+    } else errors.attributeValue = "Veuillez choisir un attribut";
   }
 
   return errors;
@@ -134,6 +158,82 @@ function submitPostForm() {
       console.error(err);
       showFormErrors(postForm, { server: err.message || "Erreur serveur" });
     }
+  });
+}
+
+async function populatePatchForm() {
+  const data = await apiGet("articles.php?action=all");
+  data.forEach((article) => {
+    console.log("found article");
+    const article_attributes = Object.entries(article);
+    article_attributes.forEach((attribute) => {
+      console.log(`Found attribute: ${attribute}`);
+      const form = document.createElement("form");
+      form.className = "patch-form";
+
+      const idInput = document.createElement("input");
+      idInput.type = "hidden";
+      idInput.value = article.id;
+      idInput.name = "articleId";
+
+      form.appendChild(idInput);
+
+      const nameInput = document.createElement("input");
+
+      nameInput.type = "hidden";
+      nameInput.value = attribute[0];
+      nameInput.name = "attributeName";
+
+      form.appendChild(nameInput);
+
+      const valueInput = document.createElement("input");
+
+      valueInput.type = "text";
+      valueInput.value = attribute[1];
+      valueInput.name = "attributeValue";
+
+      form.appendChild(valueInput);
+
+      const submitButton = document.createElement("button");
+      submitButton.type = "submit";
+
+      form.appendChild(submitButton);
+
+      patchFormContainer.appendChild(form);
+    });
+    const br = document.createElement("br");
+    patchFormContainer.appendChild(br);
+  });
+  submitPatchForm();
+}
+
+function submitPatchForm() {
+  const patchForms = document.querySelectorAll(".patch-form");
+  patchForms.forEach((patchForm) => {
+    patchForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        id: patchForm.articleId.value,
+        attribute: patchForm.attributeName.value,
+        value: patchForm.attributeValue.value,
+      };
+
+      const errors = validatePayload(payload, "patch");
+      showFormErrors(patchForm, errors);
+
+      if (Object.keys(errors) > 0) return;
+
+      try {
+        const res = await apiPatch("articles.php", payload);
+        console.log("Success", res);
+        showFormErrors(patchForm, { success: "Article modifié avec succès." });
+        setTimeout(() => populatePatchForm(), 1000);
+      } catch (err) {
+        console.error(err);
+        showFormErrors(patchForm, { server: err.message || "Erreur serveur" });
+      }
+    });
   });
 }
 
@@ -205,6 +305,8 @@ if (window.location.pathname.includes("/articles/ajouter.php")) {
   submitPostForm();
 }
 
-if (window.location.pathname.includes("/articles/supprimer.php")) {
+if (window.location.pathname.includes("/articles/supprimer.php"))
   populateDeleteForm();
-}
+
+if (window.location.pathname.includes("/articles/modifier.php"))
+  populatePatchForm();

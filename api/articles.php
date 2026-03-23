@@ -151,5 +151,72 @@ if ($method === "GET" && isset($_GET["action"])) {
         echo json_encode(["error" => "Impossible de supprimer l' article"]);
         exit();
     }
+} elseif ($method === "PATCH") {
+    $raw = file_get_contents("php://input");
+    $body = json_decode($raw, true);
+
+    $article_id = $body["id"];
+    $attribute_name = $body["attribute"];
+    $attribute_value = $body["value"];
+
+    $errors = [];
+
+    if (!is_numeric($article_id)) {
+        $errors["id"] = "Article invalide";
+    }
+    if (
+        $attribute_name === "titre" &&
+        ($attribute_value === "" || strlen($attribute_value) < 3)
+    ) {
+        $errors["titre"] = "Titre invalide (min 3 caractères).";
+    }
+    if (
+        $attribute_name === "description" &&
+        ($attribute_value === "" || strlen($attribute_value) < 10)
+    ) {
+        $errors["description"] = "Description trop courte (min 10 caractères).";
+    }
+    if (
+        $attribute_name === "contenu" &&
+        ($attribute_value === "" || strlen($attribute_value) < 20)
+    ) {
+        $errors["contenu"] = "Contenu trop court (min 20 caractères).";
+    }
+    if ($attribute_name === "categorie_id" && !is_numeric($attribute_value)) {
+        $errors["categorie_id"] = "Catégorie invalide.";
+    }
+
+    if (!empty($errors)) {
+        header("Content-Type: application/json", true, 400);
+        echo json_encode(["errors" => $errors]);
+        exit();
+    }
+
+    $allowed_attributes = ["titre", "description", "contenu", "categorie_id"];
+    if (!in_array($attribute_name, $allowed_attributes)) {
+        header("Content-Type: application/json", true, 400);
+        echo json_encode([
+            "errors" => ["attribute" => "Attribut non autorisé."],
+        ]);
+        exit();
+    }
+
+    $stmt = $pdo->prepare(
+        "UPDATE articles SET {$attribute_name} = :value WHERE id = :id;",
+    );
+    $success = $stmt->execute([
+        ":value" => $attribute_value,
+        ":id" => $article_id,
+    ]);
+
+    if ($success) {
+        header("Content-type: application/json", true, 200);
+        echo json_encode(["ok" => true, "id" => $article_id]);
+        exit();
+    } else {
+        header("Content-type: application/json", true, 400);
+        echo json_encode(["error" => "Impossible de modifier l'article"]);
+        exit();
+    }
 }
 ?>
