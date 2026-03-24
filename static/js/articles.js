@@ -355,7 +355,7 @@ function searchBar() {
         queryResults.innerHTML = "Aucun résultat";
       } else {
         // on affiche les résultats
-        queryResults.innerHTML = `${articles.map((article) => `<p style='color: green'>${article.titre}</p>`).join("")}`;
+        queryResults.innerHTML = `${articles.map((article) => `<p style='color: green'>${escapeHTML(article.titre)}</p>`).join("")}`;
       }
     } catch (err) {
       console.error(err);
