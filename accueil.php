@@ -3,11 +3,17 @@ require_once "entete.php";
 require_once "menu.php";
 ?>
 
-<main class="articles-container">
-    <p>Chargement des articles...</p>
-</main>
+<main>
 
-<div class="pagination"></div>
+    <input type="search" name="search-bar" placeholder="rechercher"></input>
+    <div class="query-results"></div>
+
+    <div class="articles-container">
+        <p>Chargement des articles...</p>
+    </div>
+
+    <div class="pagination"></div>
+</main>
 
 <script type="module" src="static/js/articles.js"></script>
 

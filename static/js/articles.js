@@ -12,7 +12,7 @@ const deleteFormContainer = document.querySelector(".delete-form-container");
 console.log("Hello"); // debugging, file wasn't loading
 
 async function getArticle(id) {
-  const data = await apiGet(`articles.php?action=search&id=${id}`);
+  const data = await apiGet(`articles.php?action=search_by_id&id=${id}`);
   return data;
 }
 
@@ -329,8 +329,45 @@ function submitDeleteForm() {
   });
 }
 
+function searchBar() {
+  // barre de recherche
+  const searchBar = document.querySelector("input[name='search-bar']"); // l'input qui sert de barre de recherche
+  const queryResults = document.querySelector(".query-results"); // div qui va afficher les résultats obtenus
+
+  searchBar.addEventListener("input", async (e) => {
+    // activation quand l'utilisateur saisit quelque chose
+    const input = e.target.value; // on récupère la valeur saisie
+    if (input.trim() === "") {
+      // si input est vide (si l'utilisateur efface tout) on affiche ce message
+      queryResults.innerHTML = "<p>Veuillez saisir un mot clé</p>";
+      return;
+    }
+
+    console.log(input);
+    try {
+      const articles = await apiGet(
+        // envoi de la requête
+        `articles.php?action=search_bar&input=${input}`,
+      );
+
+      if (articles.length === 0) {
+        // si on n'obtient aucun résultat
+        queryResults.innerHTML = "Aucun résultat";
+      } else {
+        // on affiche les résultats
+        queryResults.innerHTML = `${articles.map((article) => `<p style='color: green'>${article.titre}</p>`).join("")}`;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
+
 console.log(window.location.pathname);
-if (window.location.pathname.includes("accueil.php")) getLatestArticles();
+if (window.location.pathname.includes("accueil.php")) {
+  getLatestArticles();
+  searchBar();
+}
 // if (window.location.pathname.includes("accueil.php")) getAllArticles(); testing
 
 if (window.location.pathname.includes("detail.php")) {

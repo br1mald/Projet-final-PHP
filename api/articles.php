@@ -11,7 +11,25 @@ $method = $_SERVER["REQUEST_METHOD"];
 if ($method === "GET" && isset($_GET["action"])) {
     // READ
     switch ($_GET["action"]) {
-        case "search": // rechercher un article par son id
+        case "search_bar": // requête provenant de la barre de recherche
+            $stmt = $pdo->prepare(
+                // requête sql
+                "SELECT articles.titre, articles.description, articles.contenu FROM articles JOIN categories ON articles.categorie_id = categories.id WHERE articles.titre LIKE :input OR articles.contenu LIKE :input or categories.nom LIKE :input",
+            );
+            $stmt->execute([":input" => "%" . $_GET["input"] . "%"]); // les % avant et après signifient "si x contient input", x étant le titre, le contenu ou le nom de catégorie
+
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC); // on récupère toutes les valeurs correspondantes
+
+            if ($results) {
+                // si on a des résultats on les envoie
+                json_response($results);
+            } else {
+                // sinon on envoie une chaîne vide
+                json_response("");
+            }
+
+            break;
+        case "search_by_id": // rechercher un article par son id
             $stmt = $pdo->prepare(
                 "SELECT articles.*, categories.nom AS cat_nom, utilisateurs.nom AS util_nom FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id;",
             );
