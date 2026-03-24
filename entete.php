@@ -5,6 +5,10 @@ if (session_status() === PHP_SESSION_NONE) {
 $pageTitle = isset($pageTitle) ? htmlspecialchars($pageTitle) : "ActuMonde";
 // Base path pour les liens (quand on est dans articles/, categories/, etc.)
 $base = (strpos($_SERVER['PHP_SELF'] ?? '', '/articles/') !== false || strpos($_SERVER['PHP_SELF'] ?? '', '/categories/') !== false || strpos($_SERVER['PHP_SELF'] ?? '', '/utilisateurs/') !== false) ? '../' : '';
+// Base API/App pour JS (détection auto du dossier projet)
+$scriptPath = $_SERVER['SCRIPT_NAME'] ?? '';
+$pathParts = array_filter(explode('/', trim($scriptPath, '/')));
+$appBase = (count($pathParts) > 1) ? '/' . $pathParts[0] : '';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -33,6 +37,10 @@ $base = (strpos($_SERVER['PHP_SELF'] ?? '', '/articles/') !== false || strpos($_
 
   <?php require_once __DIR__ . '/menu.php'; ?>
 
+<script>
+window.API_BASE = '<?= $appBase ?>/api';
+window.APP_BASE = '<?= $appBase ?>';
+</script>
 <script>
 document.getElementById('formRechercheHeader')?.addEventListener('submit', function(e) {
   const champ = document.getElementById('champRechercheHeader');

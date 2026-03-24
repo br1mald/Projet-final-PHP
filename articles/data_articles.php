@@ -1,7 +1,14 @@
 <?php
 /**
  * Données articles — lecture depuis la base de données
- * Adapté pour Projet-final-PHP (colonne image)
+ *
+ * UTILISÉ UNIQUEMENT là où l'API (/api/) ne fournit pas encore la fonctionnalité :
+ * - accueil.php       : regroupement par rubriques (International, Europe, Afrique, etc.)
+ * - liste_categorie.php : filtrage par nom de catégorie (technologie, sport, etc.)
+ * - recherche.php     : recherche texte (aucun endpoint API actuellement)
+ *
+ * Pour le détail d'un article, utiliser l'API : action=search
+ * Pour la liste complète, utiliser l'API : action=all ou action=latest
  */
 require_once __DIR__ . '/../includes/db.php';
 
@@ -31,6 +38,7 @@ function getArticleById($id)
     if (!$row) return null;
 
     $row['categorie'] = strtolower($row['categorie']);
+    $row['heure'] = !empty($row['date_publication']) ? date('H:i', strtotime($row['date_publication'])) : '';
     $row['date_publication'] = dateFormatFr($row['date_publication']);
     return $row;
 }
@@ -75,6 +83,7 @@ function getArticles($categorie = 'toutes')
 
     foreach ($rows as &$row) {
         $row['categorie'] = strtolower($row['categorie']);
+        $row['heure'] = !empty($row['date_publication']) ? date('H:i', strtotime($row['date_publication'])) : '';
         $row['date_publication'] = dateFormatFr($row['date_publication']);
     }
     return $rows;

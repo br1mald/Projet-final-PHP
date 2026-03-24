@@ -1,7 +1,9 @@
-const API_BASE = "/final_project/api";
+const API_BASE = window.API_BASE || "/Projet-final-PHP/api";
 
 export async function apiFetch(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE}/${endpoint}`, {
+  const base = API_BASE.replace(/\/$/, '');
+  const url = endpoint.startsWith('http') ? endpoint : `${base}/${endpoint.replace(/^\//, '')}`;
+  const response = await fetch(url, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });

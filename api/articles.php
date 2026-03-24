@@ -12,7 +12,7 @@ if ($method === "GET" && isset($_GET["action"])) {
     switch ($_GET["action"]) {
         case "search":
             $stmt = $pdo->prepare(
-                "SELECT articles.*, categories.nom AS cat_nom, utilisateurs.nom AS util_nom FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id;",
+                "SELECT articles.*, categories.nom AS cat_nom, CONCAT(utilisateurs.prenom, ' ', utilisateurs.nom) AS util_nom FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id;",
             );
             $stmt->execute([":id" => $_GET["id"]]);
             $article = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -37,26 +37,17 @@ if ($method === "GET" && isset($_GET["action"])) {
             break;
         case "category_filter":
             $stmt = $pdo->prepare(
-                "SELECT * FROM articles WHERE categorie_id = :id;",
+                "SELECT * FROM articles WHERE categorie_id = :id ORDER BY date_publication DESC;",
             );
-            $stmt->execute(["id" => $_GET["categorie_id"]]);
-            $liste_articles = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($liste_articles) {
-                json_response($liste_articles);
-            } else {
-                json_error("Aucun article trouvé", 400);
-            }
+            $stmt->execute([":id" => $_GET["categorie_id"]]);
+            $liste_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            json_response($liste_articles ?: []);
             break;
         case "all":
-            $stmt = $pdo->query("SELECT * FROM articles;");
+            $stmt = $pdo->query("SELECT * FROM articles ORDER BY date_publication DESC;");
             $all_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            if ($all_articles) {
-                json_response($all_articles);
-            } else {
-                json_error("Aucun article trouvé", 400);
-            }
+            json_response($all_articles ?: []);
+            break;
     }
 } elseif ($method === "POST") {
     $raw = file_get_contents("php://input");

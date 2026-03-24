@@ -82,31 +82,18 @@ function img($art) {
 
     </div>
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR : En continu (derniers articles de la BDD) -->
     <aside class="sidebar">
       <div class="sidebar-title">En continu</div>
-      <?php
-      $sidebarItems = [
-        ['time'=>'21:40', 'titre'=>'Ligue des champions', 'scores'=>['FC Barcelone - Newcastle 7 - 2','Liverpool - Galatasaray 4 - 0','Bayern Munich - Atalanta 4 - 1','Tottenham - Atlético Madrid 3 - 2'], 'cat'=>''],
-        ['time'=>'20:58', 'titre'=>'Croissance africaine 2026', 'scores'=>[], 'cat'=>'La croissance économique devrait être à 4,0 % en 2026.'],
-        ['time'=>'20:12', 'titre'=>'Mort de Abdoulaye Ba', 'scores'=>[], 'cat'=>'Le décès de Abdoulaye Ba, étudiant en 2e année de médecine (UCAD).'],
-        ['time'=>'19:35', 'titre'=>'Bourses des étudiants au Sénégal', 'scores'=>[], 'cat'=>'Le système des bourses traverse une période de fortes tensions en 2026.'],
-      ];
-      foreach ($sidebarItems as $item) : ?>
+      <?php $enContinu = array_slice($tousArticles, 0, 6); ?>
+      <?php foreach ($enContinu as $art) : ?>
         <div class="sidebar-item">
-          <div class="sidebar-time"><?= htmlspecialchars($item['time']) ?></div>
+          <div class="sidebar-time"><?= htmlspecialchars($art['heure'] ?? '') ?></div>
           <div class="sidebar-item-title">
-            <a href="#"><?= htmlspecialchars($item['titre']) ?></a>
-            <?php if (!empty($item['scores'])) : ?>
-              <div style="margin-top:0.3rem;">
-                <?php foreach ($item['scores'] as $score) : ?>
-                  <div style="font-size:0.75rem; color:#555; font-family:'Barlow',sans-serif;"><?= htmlspecialchars($score) ?></div>
-                <?php endforeach; ?>
-              </div>
-            <?php endif; ?>
+            <a href="articles/detail.php?id=<?= (int)$art['id'] ?>"><?= htmlspecialchars($art['titre']) ?></a>
           </div>
-          <?php if (!empty($item['cat'])) : ?>
-            <div class="sidebar-cat"><?= htmlspecialchars($item['cat']) ?></div>
+          <?php if (!empty($art['description'])) : ?>
+            <div class="sidebar-cat"><?= htmlspecialchars(mb_substr($art['description'], 0, 100)) ?><?= mb_strlen($art['description']) > 100 ? '…' : '' ?></div>
           <?php endif; ?>
         </div>
       <?php endforeach; ?>

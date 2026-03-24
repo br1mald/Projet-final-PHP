@@ -1,12 +1,10 @@
-import { showFormErrors } from "./validation.js";
-import { apiGet, apiPost, apiDelete } from "./api.js";
+import { apiGet, apiDelete } from "./api.js";
 
-const categoriesContainer = document.querySelector(".categories-container");
-const categoriesGrid = document.getElementById("categoriesGrid");
+const deleteCategoriesList = document.getElementById("deleteCategoriesList");
 const loading = document.getElementById("loading");
 const errorMessage = document.getElementById("errorMessage");
 
-console.log("categories.js chargé");
+console.log("categories-delete.js chargé");
 
 function escapeHTML(str) {
     if (!str) return '';
@@ -43,28 +41,27 @@ function getCategoryColor(index) {
     return colors[index % colors.length];
 }
 
-function createCategoryCard(category, index) {
+function createDeleteCategoryCard(category, index) {
     const card = document.createElement("div");
-    card.className = "category-card";
+    card.className = "delete-category-card";
     card.innerHTML = `
-        <div class="category-icon" style="background-color: ${getCategoryColor(index)};">
-            ${getCategoryIcon(category.nom)}
-        </div>
         <div class="category-info">
-            <h3 class="category-name">${escapeHTML(category.nom)}</h3>
-            <div class="category-stats">
-                <span class="stat-item">
-                    <i class="icon-doc"></i>
-                    <span class="stat-number">${category.articles_count || 0}</span>
-                    articles
-                </span>
+            <div class="category-icon" style="background-color: ${getCategoryColor(index)};">
+                ${getCategoryIcon(category.nom)}
+            </div>
+            <div class="category-details">
+                <h4 class="category-name">${escapeHTML(category.nom)}</h4>
+                <div class="category-stats">
+                    <span class="stat-item">
+                        <i class="icon-doc"></i>
+                        <span class="stat-number">${category.articles_count || 0}</span>
+                        articles
+                    </span>
+                </div>
             </div>
         </div>
-        <div class="category-actions">
-            <a href="modifier.php?id=${category.id}" class="btn btn-sm btn-secondary">
-                <i class="icon-edit"></i> Modifier
-            </a>
-            <button class="btn btn-sm btn-danger" onclick="deleteCategory(${category.id}, '${escapeHTML(category.nom)}')">
+        <div class="delete-actions">
+            <button class="btn btn-danger" onclick="confirmDeleteCategory(${category.id}, '${escapeHTML(category.nom)}')">
                 <i class="icon-trash"></i> Supprimer
             </button>
         </div>
@@ -72,25 +69,25 @@ function createCategoryCard(category, index) {
     return card;
 }
 
-async function getAllCategories() {
+async function loadCategoriesForDeletion() {
     try {
         loading.style.display = 'block';
         errorMessage.style.display = 'none';
-        categoriesGrid.innerHTML = '';
+        deleteCategoriesList.innerHTML = '';
         
         const data = await apiGet("categories.php?action=all");
         loading.style.display = 'none';
         
         if (!data || data.length === 0) {
-            categoriesGrid.innerHTML = '<p class="no-results">Aucune catégorie trouvée</p>';
+            deleteCategoriesList.innerHTML = '<p class="no-results">Aucune catégorie trouvée</p>';
             return;
         }
         
         data.forEach((category, index) => {
-            categoriesGrid.appendChild(createCategoryCard(category, index));
+            deleteCategoriesList.appendChild(createDeleteCategoryCard(category, index));
         });
         
-        console.log(`Chargé ${data.length} catégories`);
+        console.log(`Chargé ${data.length} catégories pour suppression`);
     } catch (error) {
         console.error('Erreur:', error);
         loading.style.display = 'none';
@@ -99,8 +96,8 @@ async function getAllCategories() {
     }
 }
 
-async function deleteCategory(categoryId, categoryName) {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryName}" ?\n\nCette action est irréversible.`)) {
+async function confirmDeleteCategory(categoryId, categoryName) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryName}" ?\n\nCette action est irréversible et les articles associés devront être reclassés.`)) {
         return;
     }
     
@@ -108,11 +105,14 @@ async function deleteCategory(categoryId, categoryName) {
         const result = await apiDelete("categories.php", { categoryId });
         console.log("Catégorie supprimée:", result);
         
-        // Recharger la liste
-        getAllCategories();
-        
         // Notification de succès
         showNotification(`Catégorie "${categoryName}" supprimée avec succès`, 'success');
+        
+        // Recharger la liste
+        setTimeout(() => {
+            loadCategoriesForDeletion();
+        }, 1000);
+        
     } catch (error) {
         console.error('Erreur lors de la suppression:', error);
         showNotification('Erreur lors de la suppression: ' + error.message, 'error');
@@ -132,9 +132,9 @@ function showNotification(message, type = 'info') {
 }
 
 // Charger les catégories au chargement de la page
-if (window.location.pathname.includes("/categories/liste.php") && categoriesGrid) {
-    getAllCategories();
+if (window.location.pathname.includes("categories/supprimer.php")) {
+    loadCategoriesForDeletion();
 }
 
-// Rendre la fonction deleteCategory globale pour les boutons
-window.deleteCategory = deleteCategory;
+// Rendre la fonction confirmDeleteCategory globale pour les boutons
+window.confirmDeleteCategory = confirmDeleteCategory;

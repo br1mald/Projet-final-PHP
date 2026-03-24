@@ -1,38 +1,173 @@
+import { showFormErrors } from "./validation.js";
+import { apiGet, apiPost, apiDelete } from "./api.js";
+
 const usersContainer = document.querySelector(".utilisateurs-container");
+const usersGrid = document.getElementById("usersGrid");
+const loading = document.getElementById("loading");
+const errorMessage = document.getElementById("errorMessage");
+const roleFilter = document.getElementById("roleFilter");
 
-console.log("Hello"); // debugging
+console.log("utilisateurs.js chargé");
 
-async function getUser(id) {
-  const data = await apiGet(`utilisateurs.php?action=search&id=${id}`);
-  return data;
+function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'Date inconnue';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('fr-FR', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric' 
+    });
+}
+
+function getRoleBadge(role) {
+    const badges = {
+        'administrateur': '<span class="badge badge-admin">Administrateur</span>',
+        'editeur': '<span class="badge badge-editor">Éditeur</span>'
+    };
+    return badges[role] || '<span class="badge badge-default">Inconnu</span>';
+}
+
+function createUserCard(user) {
+    const card = document.createElement("div");
+    card.className = "user-card";
+    card.innerHTML = `
+        <div class="user-avatar">
+            <div class="avatar-placeholder">
+                ${user.prenom ? user.prenom.charAt(0).toUpperCase() : 'U'}${user.nom ? user.nom.charAt(0).toUpperCase() : ''}
+            </div>
+        </div>
+        <div class="user-info">
+            <h3 class="user-name">${escapeHTML(user.prenom || '')} ${escapeHTML(user.nom || '')}</h3>
+            <p class="user-login">@${escapeHTML(user.login || '')}</p>
+            <div class="user-role">${getRoleBadge(user.role)}</div>
+        </div>
+        <div class="user-actions">
+            <a href="modifier.php?id=${user.id}" class="btn btn-sm btn-secondary">
+                <i class="icon-edit"></i> Modifier
+            </a>
+            <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
+                <i class="icon-trash"></i> Supprimer
+            </button>
+        </div>
+    `;
+    return card;
 }
 
 async function getAllUsers() {
-  const data = await apiGet(`utilisateurs.php?action=all`);
-  data.forEach((user) => {
-    const li = document.createElement("li");
-
-    li.className = "user-name";
-    li.textContent = `${user.nom}`;
-
-    usersContainer.appendChild(li);
-    console.log(`found user: ${user.nom}`);
-  });
+    try {
+        loading.style.display = 'block';
+        errorMessage.style.display = 'none';
+        usersGrid.innerHTML = '';
+        
+        const data = await apiGet("utilisateurs.php?action=all");
+        loading.style.display = 'none';
+        
+        if (!data || data.length === 0) {
+            usersGrid.innerHTML = '<p class="no-results">Aucun utilisateur trouvé</p>';
+            return;
+        }
+        
+        data.forEach(user => {
+            usersGrid.appendChild(createUserCard(user));
+        });
+        
+        console.log(`Chargé ${data.length} utilisateurs`);
+    } catch (error) {
+        console.error('Erreur:', error);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.querySelector('p').textContent = `Erreur: ${error.message}`;
+    }
 }
 
 async function filterUsers(role) {
-  const data = await apiGet(`utilisateurs.php?action=role-filter&role=${role}`);
-  data.forEach((user) => {
-    const li = document.createElement("li");
-
-    li.className = "user-name";
-    li.textContent = `${user.nom}`;
-
-    usersContainer.appendChild(li);
-    console.log(`found user: ${user.nom}`);
-  });
+    try {
+        loading.style.display = 'block';
+        errorMessage.style.display = 'none';
+        usersGrid.innerHTML = '';
+        
+        const endpoint = role ? `utilisateurs.php?action=role-filter&role=${role}` : "utilisateurs.php?action=all";
+        const data = await apiGet(endpoint);
+        loading.style.display = 'none';
+        
+        if (!data || data.length === 0) {
+            usersGrid.innerHTML = '<p class="no-results">Aucun utilisateur trouvé pour ce filtre</p>';
+            return;
+        }
+        
+        data.forEach(user => {
+            usersGrid.appendChild(createUserCard(user));
+        });
+        
+        console.log(`Chargé ${data.length} utilisateurs pour le rôle: ${role || 'tous'}`);
+    } catch (error) {
+        console.error('Erreur:', error);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.querySelector('p').textContent = `Erreur: ${error.message}`;
+    }
 }
 
-if (window.location.pathname.includes("utilisateurs/liste.php")) getAllUsers();
-// if (window.location.pathname.includes("utilisateurs/liste.php"))
-//   filterUsers("editeur"); test
+async function deleteUser(userId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+        return;
+    }
+    
+    try {
+        const result = await apiDelete("utilisateurs.php", { userId });
+        console.log("Utilisateur supprimé:", result);
+        
+        // Recharger la liste
+        const currentFilter = roleFilter.value;
+        if (currentFilter) {
+            filterUsers(currentFilter);
+        } else {
+            getAllUsers();
+        }
+        
+        // Notification de succès
+        showNotification('Utilisateur supprimé avec succès', 'success');
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        showNotification('Erreur lors de la suppression: ' + error.message, 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Gestion du filtre
+if (roleFilter) {
+    roleFilter.addEventListener('change', (e) => {
+        const role = e.target.value;
+        if (role) {
+            filterUsers(role);
+        } else {
+            getAllUsers();
+        }
+    });
+}
+
+// Charger les utilisateurs au chargement de la page
+if (window.location.pathname.includes("utilisateurs/liste.php")) {
+    getAllUsers();
+}
+
+// Rendre la fonction deleteUser globale pour les boutons
+window.deleteUser = deleteUser;
