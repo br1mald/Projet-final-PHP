@@ -9,49 +9,54 @@ require_once __DIR__ . "/../includes/response.php";
 $method = $_SERVER["REQUEST_METHOD"];
 
 if ($method === "GET" && isset($_GET["action"])) {
+    // READ
     switch ($_GET["action"]) {
-        case "search":
+        case "search": // rechercher un article par son id
             $stmt = $pdo->prepare(
                 "SELECT articles.*, categories.nom AS cat_nom, utilisateurs.nom AS util_nom FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id;",
             );
-            $stmt->execute([":id" => $_GET["id"]]);
+            $stmt->execute([":id" => $_GET["id"]]); // on prend la valeur envoyée en paramètre comme id
             $article = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            // envoi de la réponse en format json
             if ($article) {
                 json_response($article);
             } else {
                 json_error("Article non trouvé", 400);
             }
             break;
-        case "latest":
+        case "latest": // affichage des 3 derniers articles (pour accueil.php)
             $stmt = $pdo->query(
                 "SELECT * FROM articles ORDER BY date_publication DESC LIMIT 3;",
             );
-            $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC); // on envoie les 3 articles les plus récents
 
+            // envoi de la réponse en format json
             if ($latest_articles) {
                 json_response($latest_articles);
             } else {
                 json_error("Article non trouvé", 400);
             }
             break;
-        case "category_filter":
+        case "category_filter": // on filtre les articles par catégorie
             $stmt = $pdo->prepare(
                 "SELECT * FROM articles WHERE categorie_id = :id;",
             );
-            $stmt->execute(["id" => $_GET["categorie_id"]]);
+            $stmt->execute(["id" => $_GET["categorie_id"]]); //
             $liste_articles = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            // envoi de la réponse
             if ($liste_articles) {
                 json_response($liste_articles);
             } else {
                 json_error("Aucun article trouvé", 400);
             }
             break;
-        case "all":
+        case "all": // récupérer tous les articles (pour modifier.php et supprimer.php)
             $stmt = $pdo->query("SELECT * FROM articles;");
             $all_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // envoi de la réponse json
             if ($all_articles) {
                 json_response($all_articles);
             } else {
@@ -59,6 +64,9 @@ if ($method === "GET" && isset($_GET["action"])) {
             }
     }
 } elseif ($method === "POST") {
+    //CREATE
+
+    // récupération des données envoyées et décodage du json
     $raw = file_get_contents("php://input");
     $body = json_decode($raw, true);
 
@@ -67,6 +75,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         $body = $_POST;
     }
 
+    // stockage des données dans des variables php
     $titre = htmlspecialchars(trim($body["titre"] ?? ""), ENT_QUOTES, "UTF-8");
     $description = htmlspecialchars(
         trim($body["description"] ?? ""),
@@ -81,6 +90,7 @@ if ($method === "GET" && isset($_GET["action"])) {
     $categorie_id = $body["categorie_id"] ?? null;
     $date_publication = $body["date_publication"] ?? date("Y-m-d H:i:s");
 
+    // validation côté serveur
     $errors = [];
     if ($titre === "" || strlen($titre) < 3) {
         $errors["titre"] = "Titre invalide (min 3 caractères).";
@@ -101,6 +111,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         exit();
     }
 
+    // requête sql pour l'ajout de l'article
     $stmt = $pdo->prepare(
         "INSERT into articles (titre, description, contenu, categorie_id, auteur_id, date_publication) VALUES (:titre, :description, :content, :category_id, :author, :date);",
     );
@@ -113,6 +124,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         ":date" => $date_publication,
     ]);
 
+    // envoi de la réponse json
     if ($success) {
         $newId = $pdo->lastInsertId();
         header("Content-Type: application/json", true, 201);
@@ -124,10 +136,15 @@ if ($method === "GET" && isset($_GET["action"])) {
         exit();
     }
 } elseif ($method === "DELETE") {
+    // DELETE
+    // récupération des données
     $raw = file_get_contents("php://input");
     $body = json_decode($raw, true);
 
+    // stockage dans des variables
     $article_id = $body["articleId"] ?? null;
+
+    // validation côté serveur
     $errors = [];
     if (!is_numeric($article_id)) {
         $errors["article_id"] = "Article invalide";
@@ -139,9 +156,11 @@ if ($method === "GET" && isset($_GET["action"])) {
         exit();
     }
 
+    // requête sql
     $stmt = $pdo->prepare("DELETE FROM articles WHERE id = :id;");
     $success = $stmt->execute([":id" => $article_id]);
 
+    // envoi de la réponse
     if ($success) {
         header("Content-type: application/json", true, 200);
         echo json_encode(["ok" => true, "id" => $article_id]);
@@ -152,9 +171,12 @@ if ($method === "GET" && isset($_GET["action"])) {
         exit();
     }
 } elseif ($method === "PATCH") {
+    // UPDATE
+    // récupération des données
     $raw = file_get_contents("php://input");
     $body = json_decode($raw, true);
 
+    // stockage dans des variables
     $article_id = $body["id"];
     $attribute_name = htmlspecialchars(
         trim($body["attribute"] ?? ""),
@@ -167,6 +189,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         "UTF-8",
     );
 
+    // validation côté serveur
     $errors = [];
 
     if (!is_numeric($article_id)) {
@@ -200,6 +223,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         exit();
     }
 
+    // restriction des attributs qu'on peut modifier
     $allowed_attributes = ["titre", "description", "contenu", "categorie_id"];
     if (!in_array($attribute_name, $allowed_attributes)) {
         header("Content-Type: application/json", true, 400);
@@ -209,6 +233,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         exit();
     }
 
+    // requête sql
     $stmt = $pdo->prepare(
         "UPDATE articles SET {$attribute_name} = :value WHERE id = :id;",
     );
@@ -217,6 +242,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         ":id" => $article_id,
     ]);
 
+    // envoi de la réponse
     if ($success) {
         header("Content-type: application/json", true, 200);
         echo json_encode(["ok" => true, "id" => $article_id]);
