@@ -81,77 +81,214 @@ if ($method === "GET" && isset($_GET["action"])) {
                 json_error("Aucun article trouvé", 400);
             }
     }
-} elseif ($method === "POST") {
-    //CREATE
+} elseif ($method === "POST" && isset($_GET["action"])) {
+    switch ($_GET["action"]) {
+        case "create":
+            //CREATE
 
-    // récupération des données envoyées et décodage du json
-    $raw = file_get_contents("php://input");
-    $body = json_decode($raw, true);
+            // stockage des données dans des variables php
+            $titre = htmlspecialchars(
+                trim($_POST["title"] ?? ""),
+                ENT_QUOTES,
+                "UTF-8",
+            );
+            $description = htmlspecialchars(
+                trim($_POST["description"] ?? ""),
+                ENT_QUOTES,
+                "UTF-8",
+            );
+            $contenu = htmlspecialchars(
+                trim($_POST["content"] ?? ""),
+                ENT_QUOTES,
+                "UTF-8",
+            );
+            $categorie_id = $_POST["category"] ?? null;
+            $image_path = null;
 
-    // if there is an error with the js script
-    if (!is_array($body) || empty($body)) {
-        $body = $_POST;
-    }
+            if (
+                isset($_FILES["image"]) &&
+                $_FILES["image"]["error"] === UPLOAD_ERR_OK
+            ) {
+                $file = $_FILES["image"];
 
-    // stockage des données dans des variables php
-    $titre = htmlspecialchars(trim($body["titre"] ?? ""), ENT_QUOTES, "UTF-8");
-    $description = htmlspecialchars(
-        trim($body["description"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-    $contenu = htmlspecialchars(
-        trim($body["contenu"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-    $categorie_id = $body["categorie_id"] ?? null;
-    $date_publication = $body["date_publication"] ?? date("Y-m-d H:i:s");
+                $allowed = ["image/jpeg", "image/png", "image/webp"];
+                if (!in_array($file["type"], $allowed)) {
+                    json_error(
+                        "Format non autorisé (JPEG, PNG, WEBP uniquement",
+                        400,
+                    );
+                }
 
-    // validation côté serveur
-    $errors = [];
-    if ($titre === "" || strlen($titre) < 3) {
-        $errors["titre"] = "Titre invalide (min 3 caractères).";
-    }
-    if ($description === "" || strlen($description) < 10) {
-        $errors["description"] = "Description trop courte (min 10 caractères).";
-    }
-    if ($contenu === "" || strlen($contenu) < 20) {
-        $errors["contenu"] = "Contenu trop court (min 20 caractères).";
-    }
-    if (!is_numeric($categorie_id)) {
-        $errors["categorie_id"] = "Catégorie invalide.";
-    }
+                if ($file["size"] > 2 * 1024 * 1024) {
+                    json_error("Image trop volumineuse (max 2Mo", 400);
+                }
 
-    if (!empty($errors)) {
-        header("Content-Type: application/json", true, 400);
-        echo json_encode(["errors" => $errors]);
-        exit();
-    }
+                $ext = pathinfo($file["name"], PATHINFO_EXTENSION);
+                $filename = uniqid("art_") . "." . $ext;
+                $dest = __DIR__ . "/../uploads/" . $filename;
 
-    // requête sql pour l'ajout de l'article
-    $stmt = $pdo->prepare(
-        "INSERT into articles (titre, description, contenu, categorie_id, auteur_id, date_publication) VALUES (:titre, :description, :content, :category_id, :author, :date);",
-    );
-    $success = $stmt->execute([
-        ":titre" => $titre,
-        ":description" => $description,
-        ":content" => $contenu,
-        ":category_id" => $categorie_id,
-        ":author" => 1, // TODO: change when auth is implemented
-        ":date" => $date_publication,
-    ]);
+                if (!move_uploaded_file($file["tmp_name"], $dest)) {
+                    json_error("Erreur lors du téléchargement", 400);
+                }
 
-    // envoi de la réponse json
-    if ($success) {
-        $newId = $pdo->lastInsertId();
-        header("Content-Type: application/json", true, 201);
-        echo json_encode(["ok" => true, "id" => $newId]);
-        exit();
-    } else {
-        header("Content-Type: application/json", true, 400);
-        echo json_encode(["error" => 'Impossible d\'ajouter l\'article.']);
-        exit();
+                $image_path = "uploads/" . $filename;
+            }
+            // validation côté serveur
+            $errors = [];
+
+            if ($titre === "" || strlen($titre) < 3) {
+                $errors["titre"] = "Titre invalide (min 3 caractères).";
+            }
+            if ($description === "" || strlen($description) < 10) {
+                $errors["description"] =
+                    "Description trop courte (min 10 caractères).";
+            }
+            if ($contenu === "" || strlen($contenu) < 20) {
+                $errors["contenu"] = "Contenu trop court (min 20 caractères).";
+            }
+            if (!is_numeric($categorie_id)) {
+                $errors["categorie_id"] = "Catégorie invalide.";
+            }
+
+            if (!empty($errors)) {
+                header("Content-Type: application/json", true, 400);
+                echo json_encode(["errors" => $errors]);
+                exit();
+            }
+
+            // requête sql pour l'ajout de l'article
+            $stmt = $pdo->prepare(
+                "INSERT into articles (titre, description, contenu, categorie_id, auteur_id, date_publication, image) VALUES (:titre, :description, :content, :category_id, :author, NOW(), :image);",
+            );
+            $success = $stmt->execute([
+                ":titre" => $titre,
+                ":description" => $description,
+                ":content" => $contenu,
+                ":category_id" => $categorie_id,
+                ":author" => 1, // TODO: change when auth is implemented
+                ":image" => $image_path, //filepath
+            ]);
+
+            // envoi de la réponse json
+            if ($success) {
+                $newId = $pdo->lastInsertId();
+                header("Content-Type: application/json", true, 201);
+                echo json_encode(["ok" => true, "id" => $newId]);
+                exit();
+            } else {
+                header("Content-Type: application/json", true, 400);
+                echo json_encode([
+                    "error" => 'Impossible d\'ajouter l\'article.',
+                ]);
+                exit();
+            }
+            break;
+        case "update":
+            // UPDATE
+            // stockage des données dans des variables php
+
+            $article_id = $_POST["id"] ?? null;
+            $titre = htmlspecialchars(
+                trim($_POST["titre"] ?? ""),
+                ENT_QUOTES,
+                "UTF-8",
+            );
+            $description = htmlspecialchars(
+                trim($_POST["description"] ?? ""),
+                ENT_QUOTES,
+                "UTF-8",
+            );
+            $contenu = htmlspecialchars(
+                trim($_POST["contenu"] ?? ""),
+                ENT_QUOTES,
+                "UTF-8",
+            );
+            $categorie_id = $_POST["categorie_id"] ?? null;
+            $image_sql = null;
+
+            // validation côté serveur
+            $errors = [];
+
+            if (!is_numeric($article_id)) {
+                $errors["id"] = "Article invalide";
+            }
+            if ($titre === "" || strlen($titre) < 3) {
+                $errors["titre"] = "Titre invalide (min 3 caractères).";
+            }
+            if ($description === "" || strlen($description) < 10) {
+                $errors["description"] =
+                    "Description trop courte (min 10 caractères).";
+            }
+            if ($contenu === "" || strlen($contenu) < 20) {
+                $errors["contenu"] = "Contenu trop court (min 20 caractères).";
+            }
+            if (!is_numeric($categorie_id)) {
+                $errors["categorie_id"] = "Catégorie invalide.";
+            }
+
+            if (!empty($errors)) {
+                header("Content-Type: application/json", true, 400);
+                echo json_encode(["errors" => $errors]);
+                exit();
+            }
+            $params = [
+                ":id" => $article_id,
+                ":titre" => $titre,
+                ":description" => $description,
+                ":content" => $contenu,
+                ":category_id" => $categorie_id,
+            ];
+            // gestion d'image si il y en a
+            if (
+                isset($_FILES["image"]) &&
+                $_FILES["image"]["error"] === UPLOAD_ERR_OK
+            ) {
+                $file = $_FILES["image"];
+
+                $allowed = ["image/jpeg", "image/png", "image/webp"];
+                if (!in_array($file["type"], $allowed)) {
+                    json_error(
+                        "Format non autorisé (JPEG, PNG, WEBP uniquement",
+                        400,
+                    );
+                }
+
+                if ($file["size"] > 2 * 1024 * 1024) {
+                    json_error("Image trop volumineuse (max 2Mo", 400);
+                }
+
+                $ext = pathinfo($file["name"], PATHINFO_EXTENSION);
+                $filename = uniqid("art_") . "." . $ext;
+                $dest = __DIR__ . "/../uploads/" . $filename;
+
+                if (!move_uploaded_file($file["tmp_name"], $dest)) {
+                    json_error("Erreur lors du téléchargement", 400);
+                }
+
+                $image_sql = ", image = :image";
+                $params[":image"] = "uploads/" . $filename;
+            }
+
+            // requête sql pour l'ajout de l'article
+            $stmt = $pdo->prepare(
+                "UPDATE articles SET titre = :titre, description = :description, contenu = :content, categorie_id = :category_id $image_sql WHERE id = :id;",
+            );
+            $success = $stmt->execute($params);
+
+            // envoi de la réponse json
+            if ($success) {
+                header("Content-Type: application/json", true, 201);
+                echo json_encode(["ok" => true, "id" => $article_id]);
+                exit();
+            } else {
+                header("Content-Type: application/json", true, 400);
+                echo json_encode([
+                    "error" => 'Impossible de modifier l\'article.',
+                ]);
+                exit();
+            }
+
+            break;
     }
 } elseif ($method === "DELETE") {
     // DELETE
@@ -186,88 +323,6 @@ if ($method === "GET" && isset($_GET["action"])) {
     } else {
         header("Content-type: application/json", true, 400);
         echo json_encode(["error" => "Impossible de supprimer l' article"]);
-        exit();
-    }
-} elseif ($method === "PATCH") {
-    // UPDATE
-    // récupération des données
-    $raw = file_get_contents("php://input");
-    $body = json_decode($raw, true);
-
-    // stockage dans des variables
-    $article_id = $body["id"];
-    $attribute_name = htmlspecialchars(
-        trim($body["attribute"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-    $attribute_value = htmlspecialchars(
-        trim($body["value"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-
-    // validation côté serveur
-    $errors = [];
-
-    if (!is_numeric($article_id)) {
-        $errors["id"] = "Article invalide";
-    }
-    if (
-        $attribute_name === "titre" &&
-        ($attribute_value === "" || strlen($attribute_value) < 3)
-    ) {
-        $errors["titre"] = "Titre invalide (min 3 caractères).";
-    }
-    if (
-        $attribute_name === "description" &&
-        ($attribute_value === "" || strlen($attribute_value) < 10)
-    ) {
-        $errors["description"] = "Description trop courte (min 10 caractères).";
-    }
-    if (
-        $attribute_name === "contenu" &&
-        ($attribute_value === "" || strlen($attribute_value) < 20)
-    ) {
-        $errors["contenu"] = "Contenu trop court (min 20 caractères).";
-    }
-    if ($attribute_name === "categorie_id" && !is_numeric($attribute_value)) {
-        $errors["categorie_id"] = "Catégorie invalide.";
-    }
-
-    if (!empty($errors)) {
-        header("Content-Type: application/json", true, 400);
-        echo json_encode(["errors" => $errors]);
-        exit();
-    }
-
-    // restriction des attributs qu'on peut modifier
-    $allowed_attributes = ["titre", "description", "contenu", "categorie_id"];
-    if (!in_array($attribute_name, $allowed_attributes)) {
-        header("Content-Type: application/json", true, 400);
-        echo json_encode([
-            "errors" => ["attribute" => "Attribut non autorisé."],
-        ]);
-        exit();
-    }
-
-    // requête sql
-    $stmt = $pdo->prepare(
-        "UPDATE articles SET {$attribute_name} = :value WHERE id = :id;",
-    );
-    $success = $stmt->execute([
-        ":value" => $attribute_value,
-        ":id" => $article_id,
-    ]);
-
-    // envoi de la réponse
-    if ($success) {
-        header("Content-type: application/json", true, 200);
-        echo json_encode(["ok" => true, "id" => $article_id]);
-        exit();
-    } else {
-        header("Content-type: application/json", true, 400);
-        echo json_encode(["error" => "Impossible de modifier l'article"]);
         exit();
     }
 }

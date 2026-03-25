@@ -5,8 +5,8 @@ const appBase = "/final_project"; // changer selon la structure du serveur
 
 const articlesContainer = document.querySelector(".articles-container");
 const formSelectField = document.querySelector(".form-select-field");
-const postForm = document.querySelector("form[action='../api/articles.php']");
-const patchFormContainer = document.querySelector(".patch-form-container");
+const postForm = document.querySelector(".post-form");
+const editForm = document.querySelector(".edit-article-form");
 const deleteFormContainer = document.querySelector(".delete-form-container");
 
 console.log("Hello"); // debugging, file wasn't loading
@@ -20,6 +20,7 @@ async function renderArticleDetails(id) {
   const data = await getArticle(id);
   const articleContainer = document.querySelector(".article-details");
   articleContainer.innerHTML = `<h1>${escapeHTML(data.titre)}</h1> <br>
+    <img src=/final_project/${data.image}> <br>
     Contenu: ${escapeHTML(data.contenu)} <br>
     Catégorie: ${escapeHTML(data.cat_nom)} <br>
     Auteur: ${escapeHTML(data.util_nom)} <br>
@@ -151,7 +152,6 @@ function submitPostForm() {
       description: postForm.description.value,
       contenu: postForm.content.value,
       categorie_id: postForm.category.value,
-      date_publication: postForm.date.value,
     };
 
     const errors = validatePayload(payload, "post"); // on valide le contenu
@@ -159,16 +159,23 @@ function submitPostForm() {
 
     if (Object.keys(errors).length > 0) return; // si il y a des erreurs on arrête l'exécution de la fonction
 
-    try {
-      const res = await apiPost("articles.php", payload); // envoi de la requête
-      console.log("created", res);
+    const formData = new FormData(e.target);
+
+    const req = await fetch("../api/articles.php?action=create", {
+      method: "POST",
+      body: formData,
+    }); // envoi de la requête
+
+    const res = await req.json();
+
+    if (res.ok) {
       showFormErrors(postForm, { success: "Article ajouté avec succès" }); // affichage d'un message de succès
       setTimeout(
         // redirection de l'utilisateur vers accueil.php après un court délai
         () => (window.location.href = "/final_project/accueil.php"),
         1000,
       );
-    } catch (err) {
+    } else {
       // en cas d'erreur
       console.error(err);
       showFormErrors(postForm, { server: err.message || "Erreur serveur" }); // on montre un message d'erreur à l'utilisateur
@@ -176,98 +183,104 @@ function submitPostForm() {
   });
 }
 
-async function populatePatchForm() {
-  // permet de génerer le formulaire de modification dans modifier.php
-  const data = await apiGet("articles.php?action=all"); // récupération de tous les articles
-  data.forEach((article) => {
-    // pour chaque article
-    console.log("found article");
-    const article_attributes = Object.entries(article); // on récupère le nom de l'attribut et la valeur sous forme de tableau
+async function populateEditForm() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
 
-    const allowedAttributes = [
-      // les attributs dont la modification est autorisée
-      "titre",
-      "description",
-      "contenu",
-      "categorie_id",
-    ];
+  if (!id) {
+    alert("Aucun article spécifié");
+    window.location.href = "/accueil.php";
+    return;
+  }
 
-    article_attributes.forEach((attribute) => {
-      // pour chaque attribut de l'article
-      if (!allowedAttributes.includes(attribute[0])) return; // si l'attribut ne doit pas être modifié on arrête l'exécution pour celui-ci
-
-      console.log(`Found attribute: ${attribute}`);
-
-      const form = document.createElement("form"); // on crée un formulaire
-      form.className = "patch-form";
-
-      const idInput = document.createElement("input"); // on crée un input de type hidden qui stocke l'id de l'article en question
-      idInput.type = "hidden";
-      idInput.value = article.id;
-      idInput.name = "articleId";
-
-      form.appendChild(idInput); // on l'ajoute au formulaire
-
-      const nameInput = document.createElement("input"); // on crée un input de type hidden qui stocke le nom de l'attribut
-
-      nameInput.type = "hidden";
-      nameInput.value = attribute[0];
-      nameInput.name = "attributeName";
-
-      form.appendChild(nameInput); // on l'ajoute au formulaire
-
-      const valueInput = document.createElement("input"); // on crée un input de type text qui permet de modifier la valeur de l'attribut
-
-      valueInput.type = "text";
-      valueInput.value = attribute[1];
-      valueInput.name = "attributeValue";
-
-      form.appendChild(valueInput); // on l'ajoute au formulaire
-
-      const submitButton = document.createElement("button"); // bouton de soumission
-      submitButton.type = "submit";
-
-      form.appendChild(submitButton); // on l'ajoute au formulaire
-
-      patchFormContainer.appendChild(form); // on ajoute le formulaire au patchFormContainer dans modifier.php
+  try {
+    const catData = await apiGet("categories.php?action=all");
+    const select = document.querySelector(".categorie_id");
+    catData.forEach((cat) => {
+      const option = document.createElement("option");
+      option.value = cat.id;
+      option.textContent = cat.nom;
+      select.appendChild(option);
     });
-    const br = document.createElement("br"); // on ajoute une ligne pour séparer chaque formulaire, à enlever plus tard
-    patchFormContainer.appendChild(br);
-  });
-  submitPatchForm(); // active la fonction qui permet de soumettre les formulaires une fois qu'ils sont tous générés
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors du chargement des catégories");
+    return;
+  }
+
+  try {
+    const article = await apiGet("articles.php?action=search_by_id&id=" + id);
+
+    document.querySelector(".article-id").value = article.id;
+    document.querySelector(".titre").value = article.titre;
+    document.querySelector(".description").value = article.description;
+    document.querySelector(".contenu").value = article.contenu;
+    document.querySelector(".categorie_id").value = article.categorie_id;
+
+    if (article.image) {
+      const img = document.querySelector(".current-image");
+      img.src = "/" + article.image;
+      img.style.display = "block";
+    }
+  } catch (err) {
+    alert("Article introuvable");
+    window.location.href = "/final_project/accueil.php";
+    return;
+  }
+
+  submitEditForm(); // active la fonction qui permet de soumettre les formulaires une fois qu'ils sont tous générés
 }
 
-function submitPatchForm() {
+function submitEditForm() {
   // pour soumettre le formulaire de modification
-  const patchForms = document.querySelectorAll(".patch-form"); // on récupère tous les formulaires de modification
-  patchForms.forEach((patchForm) => {
-    // pour chaque formulaire
-    patchForm.addEventListener("submit", async (e) => {
-      // activation quand l'utilisateur essaie d'envoyer le formulaire
-      e.preventDefault();
+  editForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      const payload = {
-        // contenu du body de la requête
-        id: patchForm.articleId.value, // id de l'article
-        attribute: patchForm.attributeName.value, // nom de l'attribut
-        value: patchForm.attributeValue.value, // valeur de l'attribut
-      };
+    // Client-side validation
+    const titre = editForm.titre.value.trim();
+    const description = editForm.description.value.trim();
+    const contenu = editForm.contenu.value.trim();
+    const categorie = editForm.categorie_id.value;
 
-      const errors = validatePayload(payload, "patch"); // validation côté client
-      showFormErrors(patchForm, errors);
+    if (titre.length < 3) {
+      alert("Le titre doit contenir au moins 3 caractères");
+      return;
+    }
+    if (description.length < 10) {
+      alert("La description doit contenir au moins 10 caractères");
+      return;
+    }
+    if (contenu.length < 20) {
+      alert("Le contenu doit contenir au moins 20 caractères");
+      return;
+    }
+    if (!categorie) {
+      alert("Veuillez choisir une catégorie");
+      return;
+    }
 
-      if (Object.keys(errors).length > 0) return;
+    // envoi de la requête
+    const formData = new FormData(editForm);
 
-      try {
-        const res = await apiPatch("articles.php", payload); // envoi de la requête
-        console.log("Success", res);
-        showFormErrors(patchForm, { success: "Article modifié avec succès." }); // affichage message de succès
-      } catch (err) {
-        // en cas d'erreur
-        console.error(err);
-        showFormErrors(patchForm, { server: err.message || "Erreur serveur" }); // affichage message d'erreur
+    try {
+      const res = await fetch("/final_project/api/articles.php?action=update", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href =
+          "/final_project/articles/detail.php?id=" + data.id;
+      } else {
+        // si il y a erreur
+        showFormErrors(editForm, "Erreur lors de la modification");
       }
-    });
+    } catch (err) {
+      console.error(err);
+      showFormErrors(editForm, { server: err.message || "Erreur server" });
+    }
   });
 }
 
@@ -388,4 +401,4 @@ if (window.location.pathname.includes("/articles/supprimer.php"))
   populateDeleteForm(); // active la fonction qui permet de soumettre le formulaire de suppresssion
 
 if (window.location.pathname.includes("/articles/modifier.php"))
-  populatePatchForm(); // active la fonction qui permet de soumettre le formulaire de modification
+  populateEditForm(); // active la fonction qui permet de soumettre le formulaire de modification
