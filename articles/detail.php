@@ -17,6 +17,8 @@ $canEdit = in_array($userRole, ['editeur', 'administrateur']);
       <div id="article-loading">Chargement...</div>
       <div id="article-error" class="alert alert-error" style="display:none;"></div>
       <div id="article-details" class="article-details" style="display:none;"></div>
+      <footer class="article-footer">
+      </footer>
     </div>
     <aside class="sidebar" id="article-sidebar" style="padding-left:1.5rem; border-left:1px solid var(--border-light);">
       <div class="sidebar-title">En continu</div>

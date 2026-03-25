@@ -570,6 +570,19 @@ img { max-width: 100%; display: block; object-fit: cover; }
 .site-nav ul li a.btn-logout { color: var(--muted); }
 .site-nav ul li a.btn-logout:hover { color: #000; }
 
+/* ── COMPTEURS DE CATÉGORIES ── */
+.category-count {
+  background: var(--accent);
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+}
+
 /* ── CONTAINER ── */
 .container {
   max-width: 1200px;
