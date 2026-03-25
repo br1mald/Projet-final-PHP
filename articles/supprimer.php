@@ -7,8 +7,7 @@ require_once __DIR__ . "/../menu.php";
 
     <h1>Supprimer un article</h1>
 
-    <div class="delete-form-container">
-    </div>
+    <div class="delete-form-container"> </div>
 
 </main>
 

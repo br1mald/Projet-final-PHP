@@ -15,13 +15,20 @@ async function getCategory(id) {
 
 async function getAllCategories() {
   const data = await apiGet(`categories.php?action=all`);
-  data.forEach((category) => {
+  data.forEach(async (category) => {
     const li = document.createElement("li");
 
     li.className = "category-name";
     li.textContent = `${category.nom}`;
 
+    const p = document.createElement("p");
+    const number = await apiGet(
+      `categories.php?action=number_of_articles&id=${category.id}`,
+    );
+    p.textContent = `Nombre d'articles: ${number}`;
+
     categoriesContainer.appendChild(li);
+    categoriesContainer.appendChild(p);
     console.log(`added category: ${category.nom}`);
   });
 }
@@ -186,9 +193,9 @@ function submitDeleteForm() {
   });
 }
 
-if (window.location.pathname.includes("/categories/liste.php"))
+if (window.location.pathname.includes("/categories/liste.php")) {
   getAllCategories();
-
+}
 if (window.location.pathname.includes("/categories/ajouter.php"))
   submitPostForm();
 if (window.location.pathname.includes("/categories/supprimer.php"))

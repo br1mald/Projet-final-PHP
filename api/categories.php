@@ -32,6 +32,24 @@ if ($method === "GET" && isset($_GET["action"])) {
                 json_error("Catégorie non trouvée", 400);
             }
             break;
+        case "number_of_articles":
+            $stmt = $pdo->prepare(
+                "SELECT * FROM categories JOIN articles ON categories.id = articles.categorie_id WHERE categories.id = :id;",
+            );
+            $stmt->execute([":id" => $_GET["id"]]);
+            $counter = 0;
+
+            $found_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($found_articles) {
+                foreach ($found_articles as $article) {
+                    $counter++;
+                }
+                json_response($counter);
+            } else {
+                json_error("Aucun article trouvé", 400);
+            }
+            break;
     }
 } elseif ($method === "POST") {
     $raw = file_get_contents("php://input");
