@@ -2,13 +2,11 @@ import { apiGet, apiPost, apiDelete, apiPatch } from "./api.js";
 import { showFormErrors, escapeHTML } from "./validation.js";
 
 const usersContainer = document.querySelector(".utilisateurs-container");
-const deleteFormContainer = document.querySelector(".delete-form-container");
 const patchFormContainer = document.querySelector(".patch-form-container");
 const postForm = document.querySelector(
   "form[action='../api/utilisateurs.php']",
 );
 
-console.log("Hello"); // debugging
 
 async function getUser(id) {
   const data = await apiGet(`utilisateurs.php?action=search&id=${id}`);
@@ -257,59 +255,59 @@ function submitPatchForm() {
 }
 
 async function populateDeleteForm() {
-  const data = await apiGet("utilisateurs.php?action=all");
-  data.forEach((utilisateur) => {
-    const form = document.createElement("form");
-    form.className = "delete-form";
+  const list = document.getElementById("deleteUsersList");
+  const loading = document.getElementById("loadingUsers");
+  const errorEl = document.getElementById("errorUsers");
 
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.value = utilisateur.id;
-    input.name = "user";
+  try {
+    const data = await apiGet("utilisateurs.php?action=all");
+    if (loading) loading.style.display = "none";
 
-    const submitButton = document.createElement("button");
-    submitButton.type = "submit";
-    submitButton.textContent = utilisateur.nom;
+    data.forEach((utilisateur) => {
+      const card = document.createElement("div");
+      card.className = "delete-user-card";
 
-    form.appendChild(input);
-    form.appendChild(submitButton);
+      // Left: avatar + name/login
+      const info = document.createElement("div");
+      info.className = "user-info";
 
-    deleteFormContainer.appendChild(form);
-  });
+      const initials =
+        (utilisateur.prenom ? utilisateur.prenom[0].toUpperCase() : "U") +
+        (utilisateur.nom ? utilisateur.nom[0].toUpperCase() : "");
+      const avatar = document.createElement("div");
+      avatar.className = "user-avatar";
+      avatar.innerHTML = `<div class="avatar-placeholder">${escapeHTML(initials)}</div>`;
 
-  submitDeleteForm();
-}
+      const details = document.createElement("div");
+      details.innerHTML = `<h4 class="user-name">${escapeHTML(utilisateur.prenom || "")} ${escapeHTML(utilisateur.nom || "")}</h4>
+        <p class="user-login">@${escapeHTML(utilisateur.login || "")}</p>`;
 
-function submitDeleteForm() {
-  const deleteForms = document.querySelectorAll(".delete-form");
-  deleteForms.forEach((deleteForm) => {
-    deleteForm.addEventListener("submit", (e) => {
-      e.preventDefault();
+      info.appendChild(avatar);
+      info.appendChild(details);
 
-      const payload = {
-        userId: deleteForm.user.value,
-      };
+      // Right: delete button
+      const btn = document.createElement("button");
+      btn.className = "btn btn-danger btn-sm";
+      btn.textContent = "Supprimer";
+      btn.addEventListener("click", async () => {
+        const name = `${utilisateur.prenom || ""} ${utilisateur.nom || ""}`.trim();
+        if (!confirm(`Supprimer l'utilisateur "${name}" ?`)) return;
+        try {
+          await apiDelete("utilisateurs.php", { userId: utilisateur.id });
+          card.remove();
+        } catch (err) {
+          alert("Erreur : " + err.message);
+        }
+      });
 
-      const errors = validatePayload(deleteForm, "delete");
-      showFormErrors(deleteForm, errors);
-
-      if (Object.keys(errors).length > 0) return;
-
-      try {
-        const res = apiDelete("utilisateurs.php", payload);
-        console.log("success", res);
-        showFormErrors(deleteForm, {
-          success: "Utilisateur supprimé avec succès",
-        });
-        setTimeout(() => {
-          deleteForm.remove();
-        }, 1000);
-      } catch (err) {
-        console.error(err);
-        showFormErrors(deleteForm, { server: err.message || "Erreur serveur" });
-      }
+      card.appendChild(info);
+      card.appendChild(btn);
+      list.appendChild(card);
     });
-  });
+  } catch (err) {
+    if (loading) loading.style.display = "none";
+    if (errorEl) errorEl.style.display = "block";
+  }
 }
 
 if (window.location.pathname.includes("utilisateurs/liste.php")) getAllUsers();
