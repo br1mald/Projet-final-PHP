@@ -1,3 +1,6 @@
-    </body>
-    <script type="module" src="/final_project/static/js/auth.js"></script>
+<footer class="site-footer">
+  <p>&copy; <?= date('Y') ?> ActuMonde — Tous droits réservés</p>
+</footer>
+<script type="module" src="<?= $base ?>static/js/auth.js"></script>
+</body>
 </html>

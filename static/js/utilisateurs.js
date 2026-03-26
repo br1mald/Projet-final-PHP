@@ -112,7 +112,7 @@ function submitPostForm() {
       console.log("success", res);
       showFormErrors(postForm, { success: "Utilisateur ajouté avec succès" });
       setTimeout(() => {
-        window.location.href = "/final_project/utilisateurs/liste.php";
+        window.location.href = (window.APP_BASE || "") + "/utilisateurs/liste.php";
       }, 1000);
     } catch (err) {
       console.error(err);

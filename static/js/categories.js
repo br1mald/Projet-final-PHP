@@ -71,7 +71,7 @@ function submitPostForm() {
       console.log("created", res);
       showFormErrors(postForm, { success: "Catégorie ajoutée avec succès" });
       setTimeout(
-        () => (window.location.href = "/final_project/categories/liste.php"),
+        () => (window.location.href = (window.APP_BASE || "") + "/categories/liste.php"),
         1000,
       );
     } catch (err) {

@@ -1,4 +1,4 @@
-const API_BASE = "/final_project/api";
+const API_BASE = window.API_BASE || "/final_project/api";
 
 export async function apiFetch(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
