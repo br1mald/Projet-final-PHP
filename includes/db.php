@@ -4,7 +4,9 @@
 /** @var string $dbname */
 /** @var string $user */
 /** @var string $password */
+
 require_once __DIR__ . "/../config.php";
+
 try {
     $pdo = new PDO(
         "mysql:host=$host;dbname=$dbname;charset=utf8",
