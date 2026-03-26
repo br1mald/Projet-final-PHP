@@ -31,7 +31,7 @@ if ($method === "GET" && isset($_GET["action"])) {
             break;
         case "search_by_id": // rechercher un article par son id
             $stmt = $pdo->prepare(
-                "SELECT articles.*, categories.nom AS cat_nom, categories.nom AS categorie, CONCAT(utilisateurs.prenom, ' ', utilisateurs.nom) AS util_nom, CONCAT(utilisateurs.prenom, ' ', utilisateurs.nom) AS auteur FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id",
+                "SELECT articles.*, categories.nom AS categorie, CONCAT(utilisateurs.prenom, ' ', utilisateurs.nom) AS auteur FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id",
             );
             $stmt->execute([":id" => $_GET["id"]]); // on prend la valeur envoyée en paramètre comme id
             $article = $stmt->fetch(PDO::FETCH_ASSOC);

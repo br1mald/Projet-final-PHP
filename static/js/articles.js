@@ -26,8 +26,8 @@ async function renderArticleDetails(id) {
   if (!articleContainer) return;
 
   const imgUrl = data.image_url || data.image || window.IMG_DEFAULT || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
-  const categorie = data.categorie || data.cat_nom || '';
-  const auteur = data.auteur || data.util_nom || '';
+  const categorie = data.categorie || '';
+  const auteur = data.auteur || '';
   const paragraphes = (data.contenu || '').split('\n\n').filter(p => p.trim());
   const contentHtml = paragraphes.length > 0
     ? paragraphes.map(p => `<p>${escapeHTML(p.trim())}</p>`).join('')

@@ -29,30 +29,6 @@ const IMAGES_PAR_CATEGORIE = {
   <div id="pagination-container" class="pagination"></div>
 </main>
 
-<style>
-.articles-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; margin-bottom:2rem; }
-.article-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.08); transition:transform .3s ease; }
-.article-card:hover { transform:translateY(-4px); }
-.article-card img { width:100%; height:200px; object-fit:cover; }
-.article-card-content { padding:1.5rem; }
-.article-category { color:var(--accent); font-size:.8rem; font-weight:600; margin-bottom:.5rem; }
-.article-title { margin:.5rem 0; font-size:1.1rem; line-height:1.3; }
-.article-title a { color:var(--text); text-decoration:none; }
-.article-title a:hover { color:var(--accent); }
-.article-excerpt { color:var(--muted); margin:1rem 0; line-height:1.5; }
-.article-meta { color:var(--muted); font-size:.85rem; display:flex; justify-content:space-between; align-items:center; }
-.pagination { display:flex; justify-content:center; gap:.5rem; margin-top:2rem; }
-.pagination a,.pagination span { padding:.5rem 1rem; background:#fff; border:1px solid var(--border-light); border-radius:6px; text-decoration:none; color:var(--text); transition:all .3s ease; }
-.pagination a:hover { background:var(--accent); color:var(--primary); }
-.pagination .active { background:var(--accent); color:var(--primary); border-color:var(--accent); }
-.loading-message { text-align:center; color:var(--muted); padding:3rem; font-style:italic; grid-column:1/-1; }
-.page-header { margin-bottom:2rem; }
-.page-header h1 { color:var(--text); margin-bottom:.5rem; }
-.breadcrumb { color:var(--muted); font-size:.9rem; }
-.breadcrumb a { color:var(--accent); text-decoration:none; }
-.breadcrumb a:hover { text-decoration:underline; }
-@media(max-width:768px){.articles-grid{grid-template-columns:1fr;}}
-</style>
 
 <script>
 async function apiGet(endpoint) {
