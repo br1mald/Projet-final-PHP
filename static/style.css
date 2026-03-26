@@ -407,7 +407,8 @@ img {
 }
 
 .delete-user-card,
-.delete-category-card {
+.delete-category-card,
+.delete-article-card {
     background: var(--surface);
     border: 2px solid var(--border-light);
     border-radius: 12px;
@@ -420,7 +421,8 @@ img {
 }
 
 .delete-user-card:hover,
-.delete-category-card:hover {
+.delete-category-card:hover,
+.delete-article-card:hover {
     border-color: var(--error);
     box-shadow: 0 4px 12px rgba(177, 0, 0, 0.1);
 }

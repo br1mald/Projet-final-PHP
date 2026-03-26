@@ -14,8 +14,18 @@ check_role($role, ["editeur", "administrateur"]);
       <a href="liste.php" class="btn btn-secondary btn-sm">← Retour</a>
     </div>
   </div>
-  <div class="delete-form-container"></div>
+
+  <div class="delete-container">
+    <div class="warning-message">
+      <h3>⚠ Attention</h3>
+      <p>La suppression d'une catégorie est irréversible.</p>
+    </div>
+    <div id="deleteCategoriesList"></div>
+    <p id="loading">Chargement…</p>
+    <p id="errorMessage" style="display:none; color:var(--error);">Erreur lors du chargement.</p>
+  </div>
 </main>
 
 <script type="module" src="../static/js/categories.js"></script>
 <?php require_once __DIR__ . "/../footer.php"; ?>
+

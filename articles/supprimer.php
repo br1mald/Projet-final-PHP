@@ -15,7 +15,13 @@ check_role($role, ["editeur", "administrateur"]);
     </div>
   </div>
 
-  <div class="delete-form-container"></div>
+  <div class="delete-container">
+    <div class="warning-message">
+      <h3>⚠ Attention</h3>
+      <p>La suppression d'un article est irréversible.</p>
+    </div>
+    <div class="delete-form-container" id="deleteArticlesList"></div>
+  </div>
 </main>
 
 <script type="module" src="../static/js/articles.js"></script>

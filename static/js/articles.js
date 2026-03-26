@@ -399,54 +399,32 @@ function submitEditForm() {
 async function populateDeleteForm() {
   const data = await apiGet("articles.php?action=all");
   data.forEach((article) => {
-    const form = document.createElement("form");
-    form.className = "delete-form admin-delete-item";
+    const card = document.createElement("div");
+    card.className = "delete-article-card";
 
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = "article";
-    input.value = article.id;
+    // Title shown to the user
+    const title = document.createElement("span");
+    title.className = "article-title-text";
+    title.textContent = article.titre;
 
-    const submitButton = document.createElement("button");
-    submitButton.type = "submit";
-    submitButton.className = "btn btn-danger btn-sm";
-    submitButton.textContent = "Supprimer";
-
-    const span = document.createElement("span");
-    span.textContent = article.titre;
-
-    form.appendChild(input);
-    form.appendChild(span);
-    form.appendChild(submitButton);
-
-    deleteFormContainer.appendChild(form);
-  });
-  submitDeleteForm();
-}
-
-function submitDeleteForm() {
-  const deleteForms = document.querySelectorAll(".delete-form");
-  deleteForms.forEach((deleteForm) => {
-    deleteForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = {
-        articleId: deleteForm.article.value,
-      };
-
-      const errors = validatePayload(payload, "delete");
-      showFormErrors(deleteForm, errors);
-
-      if (Object.keys(errors).length > 0) return;
-
+    // Delete button — calls the API directly, no form needed
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-danger btn-sm";
+    btn.textContent = "Supprimer";
+    btn.addEventListener("click", async () => {
+      if (!confirm(`Supprimer l'article "${article.titre}" ?`)) return;
       try {
-        const res = await apiDelete(`articles.php`, payload);
-        showFormErrors(deleteForm, { success: "Article supprimé avec succès" });
-        setTimeout(() => deleteForm.remove(), 1500);
+        await apiDelete("articles.php", { articleId: article.id });
+        card.remove();
       } catch (err) {
-        console.error(err);
-        showFormErrors(deleteForm, { server: err.message || "Erreur serveur" });
+        alert(err.message || "Erreur lors de la suppression");
       }
     });
+
+    card.appendChild(title);
+    card.appendChild(btn);
+    deleteFormContainer.appendChild(card);
   });
 }
 
