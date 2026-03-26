@@ -1,25 +1,12 @@
 <?php
 $pageTitle = "Accueil";
 require_once "entete.php";
-require_once "articles/data_articles.php";
-
-// Image par défaut si l'article n'en a pas
-define('IMG_DEFAULT', 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80');
-
-// Récupération des articles depuis la BDD
-$tousArticles = getArticles('toutes');
-$alaUne = $tousArticles[0] ?? null;
-$dernieres = array_slice($tousArticles, 1, 3);
-$plusDActualites = array_slice($tousArticles, 4, 8);
-$articlesInternational = getArticles('International');
-$articlesEurope = getArticles('Europe');
-$articlesAfrique = getArticles('Afrique');
-$articlesAmericques = getArticles('Amériques');
-
-function img($art) {
-  return !empty($art['image']) ? htmlspecialchars($art['image']) : IMG_DEFAULT;
-}
 ?>
+
+<!-- Image par défaut si l'article n'en a pas -->
+<script>
+const IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
+</script>
 
 <main class="container">
   <?php if (isset($_SESSION['message'])) : ?>
@@ -31,196 +18,352 @@ function img($art) {
 
   <div class="main-layout">
     <div class="main-content">
-
       <!-- À la une -->
       <div class="section-title">À la une</div>
-      <?php if ($alaUne) : ?>
-      <div class="article-featured">
-        <img class="featured-img" src="<?= img($alaUne) ?>" alt="<?= htmlspecialchars($alaUne['titre']) ?>">
-        <div>
-          <div class="featured-category"><?= ucfirst(htmlspecialchars($alaUne['categorie'])) ?></div>
-          <h2 class="featured-title">
-            <a href="articles/detail.php?id=<?= (int)$alaUne['id'] ?>"><?= htmlspecialchars($alaUne['titre']) ?></a>
-          </h2>
-          <p class="featured-excerpt"><?= htmlspecialchars($alaUne['description']) ?></p>
-          <div class="featured-meta"><?= htmlspecialchars($alaUne['auteur']) ?> &nbsp;|&nbsp; <?= htmlspecialchars($alaUne['date_publication']) ?></div>
-        </div>
+      <div id="a-la-une-container">
+        <div class="loading-message">Chargement de l'article à la une...</div>
       </div>
-      <?php else : ?>
-      <div class="alert alert-info">Aucun article à la une pour le moment.</div>
-      <?php endif; ?>
 
-      <!-- Dernières actualités — 3 colonnes -->
+      <!-- Dernières actualités -->
       <div class="section-title">Dernières actualités</div>
-      <div class="articles-grid-3">
-        <?php foreach ($dernieres as $art) : ?>
-        <article class="article-card-sm">
-          <img class="card-img" src="<?= img($art) ?>" alt="<?= htmlspecialchars($art['titre']) ?>">
-          <div class="card-category"><?= ucfirst(htmlspecialchars($art['categorie'])) ?></div>
-          <h3 class="card-title"><a href="articles/detail.php?id=<?= (int)$art['id'] ?>"><?= htmlspecialchars($art['titre']) ?></a></h3>
-          <div class="card-meta"><?= htmlspecialchars($art['description']) ?></div>
-          <div class="card-meta"><?= htmlspecialchars($art['date_publication']) ?></div>
-        </article>
-        <?php endforeach; ?>
+      <div id="dernieres-actualites-container" class="articles-grid-3">
+        <div class="loading-message">Chargement des dernières actualités...</div>
       </div>
 
-      <!-- Plus d'actualités — liste horizontale -->
-      <?php if (!empty($plusDActualites)) : ?>
+      <!-- Plus d'actualités -->
       <div class="section-title">Plus d'actualités</div>
-      <?php foreach ($plusDActualites as $art) : ?>
-      <div class="article-list-item">
-        <img class="list-img" src="<?= img($art) ?>" alt="<?= htmlspecialchars($art['titre']) ?>">
-        <div>
-          <div class="list-category"><?= ucfirst(htmlspecialchars($art['categorie'])) ?></div>
-          <h3 class="list-title"><a href="articles/detail.php?id=<?= (int)$art['id'] ?>"><?= htmlspecialchars($art['titre']) ?></a></h3>
-          <div class="list-meta"><?= htmlspecialchars($art['description']) ?></div>
-          <div class="list-meta"><?= htmlspecialchars($art['date_publication']) ?></div>
+      <div id="plus-actualites-container" class="article-list">
+        <div class="loading-message">Chargement des actualités...</div>
+      </div>
+
+      <!-- RUBRIQUE : ACTUALITÉS (International) -->
+      <div class="rubrique-header">
+        <div class="trait"></div>
+        <h2>International</h2>
+      </div>
+      <div id="international-container" class="articles-grid-3">
+        <div class="loading-message">Chargement des articles internationaux...</div>
+      </div>
+
+      <!-- RUBRIQUE : EUROPE -->
+      <div class="rubrique-header">
+        <div class="trait"></div>
+        <h2>Europe</h2>
+      </div>
+      <div id="europe-container" class="articles-grid-3">
+        <div class="loading-message">Chargement des articles européens...</div>
+      </div>
+
+      <!-- RUBRIQUES : AFRIQUE + AMÉRIQUES -->
+      <div class="rubriques-double">
+        <div class="rubrique-col">
+          <div class="rubrique-header">
+            <div class="trait"></div>
+            <h2>Afrique</h2>
+          </div>
+          <div id="afrique-container" class="article-list">
+            <div class="loading-message">Chargement des articles africains...</div>
+          </div>
+        </div>
+
+        <div class="rubrique-col">
+          <div class="rubrique-header">
+            <div class="trait"></div>
+            <h2>Amériques</h2>
+          </div>
+          <div id="americas-container" class="article-list">
+            <div class="loading-message">Chargement des articles américains...</div>
+          </div>
         </div>
       </div>
-      <?php endforeach; ?>
-      <?php endif; ?>
-
     </div>
 
     <!-- SIDEBAR : En continu (derniers articles de la BDD) -->
     <aside class="sidebar">
       <div class="sidebar-title">En continu</div>
-      <?php $enContinu = array_slice($tousArticles, 0, 6); ?>
-      <?php foreach ($enContinu as $art) : ?>
-        <div class="sidebar-item">
-          <div class="sidebar-time"><?= htmlspecialchars($art['heure'] ?? '') ?></div>
-          <div class="sidebar-item-title">
-            <a href="articles/detail.php?id=<?= (int)$art['id'] ?>"><?= htmlspecialchars($art['titre']) ?></a>
-          </div>
-          <?php if (!empty($art['description'])) : ?>
-            <div class="sidebar-cat"><?= htmlspecialchars(mb_substr($art['description'], 0, 100)) ?><?= mb_strlen($art['description']) > 100 ? '…' : '' ?></div>
-          <?php endif; ?>
-        </div>
-      <?php endforeach; ?>
+      <div id="en-continu-container">
+        <div class="loading-message">Chargement...</div>
+      </div>
     </aside>
   </div>
-
-  <!-- RUBRIQUE : ACTUALITÉS (International) -->
-  <?php if (!empty($articlesInternational)) : ?>
-  <div class="rubrique-section">
-    <div class="rubrique-header">
-      <div class="trait"></div>
-      <h1>Actualités</h1>
-      <a href="articles/liste_categorie.php">›</a>
-    </div>
-    <?php
-    $intFeatured = $articlesInternational[0] ?? null;
-    $intCards = array_slice($articlesInternational, 1, 3);
-    ?>
-    <?php if ($intFeatured) : ?>
-    <div class="rubrique-featured">
-      <img class="rf-img" src="<?= img($intFeatured) ?>" alt="<?= htmlspecialchars($intFeatured['titre']) ?>">
-      <div class="rf-body">
-        <div class="rf-category">Analyse &nbsp;■&nbsp; International</div>
-        <h3 class="rf-title"><a href="articles/detail.php?id=<?= (int)$intFeatured['id'] ?>" style="color:inherit;"><?= htmlspecialchars($intFeatured['titre']) ?></a></h3>
-        <p class="rf-excerpt"><?= htmlspecialchars($intFeatured['description']) ?></p>
-        <div class="rf-meta"><?= htmlspecialchars($intFeatured['auteur']) ?> &nbsp;|&nbsp; <?= htmlspecialchars($intFeatured['date_publication']) ?></div>
-      </div>
-    </div>
-    <?php endif; ?>
-    <div class="rubrique-grid-3">
-      <?php foreach ($intCards as $art) : ?>
-      <div class="rubrique-card">
-        <a href="articles/detail.php?id=<?= (int)$art['id'] ?>">
-          <img class="rc-img" src="<?= img($art) ?>" alt="<?= htmlspecialchars($art['titre']) ?>">
-          <div class="rc-body">
-            <div class="rc-category">International</div>
-            <h3 class="rc-title"><?= htmlspecialchars($art['titre']) ?></h3>
-            <p style="font-size:0.95rem; color:#555; padding:0 0.7rem 0.7rem;"><?= htmlspecialchars($art['description']) ?></p>
-          </div>
-        </a>
-      </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <!-- RUBRIQUE : EUROPE -->
-  <?php if (!empty($articlesEurope)) : ?>
-  <div class="rubrique-section">
-    <div class="rubrique-header">
-      <div class="trait"></div>
-      <h1>Europe</h1>
-    </div>
-    <?php
-    $euFeatured = $articlesEurope[0] ?? null;
-    $euListe = array_slice($articlesEurope, 1, 3);
-    ?>
-    <div class="rubrique-split">
-      <?php if ($euFeatured) : ?>
-      <div class="rs-left">
-        <a href="articles/detail.php?id=<?= (int)$euFeatured['id'] ?>">
-          <img src="<?= img($euFeatured) ?>" alt="<?= htmlspecialchars($euFeatured['titre']) ?>" style="width:100%;height:150px;object-fit:cover;margin-bottom:0.8rem;">
-          <h3 class="rs-title"><?= htmlspecialchars($euFeatured['titre']) ?></h3>
-        </a>
-        <div class="rs-meta">Europe</div>
-      </div>
-      <?php endif; ?>
-      <div class="rs-right">
-        <?php foreach ($euListe as $art) : ?>
-        <div class="rs-item">
-          <a href="articles/detail.php?id=<?= (int)$art['id'] ?>">
-            <div class="rs-item-inner">
-              <img src="<?= img($art) ?>" alt="<?= htmlspecialchars($art['titre']) ?>" style="width:80px;height:55px;object-fit:cover;">
-              <div>
-                <div class="rs-item-title"><?= htmlspecialchars($art['titre']) ?></div>
-                <div class="rs-item-cat">Europe</div>
-              </div>
-            </div>
-          </a>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <!-- RUBRIQUES : AFRIQUE + AMÉRIQUES -->
-  <?php if (!empty($articlesAfrique) || !empty($articlesAmericques)) : ?>
-  <div class="rubrique-duo">
-    <?php if (!empty($articlesAfrique)) : ?>
-    <div class="rubrique-duo-col">
-      <div class="rubrique-duo-header">
-        <div class="trait"></div>
-        <h1>Afrique</h1>
-        <a href="articles/liste_categorie.php?categorie=afrique">›</a>
-      </div>
-      <div class="rubrique-duo-body">
-        <?php foreach (array_slice($articlesAfrique, 0, 4) as $i => $art) : ?>
-        <div class="rubrique-duo-item">
-          <?php if ($i < 2) : ?><div class="di-note"><?= $i === 0 ? "Journal de l'Afrique" : "On va plus loin" ?></div><?php endif; ?>
-          <div class="di-title"><a href="articles/detail.php?id=<?= (int)$art['id'] ?>"><?= htmlspecialchars($art['titre']) ?></a></div>
-          <div class="di-meta">Afrique</div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
-    <?php endif; ?>
-    <?php if (!empty($articlesAmericques)) : ?>
-    <div class="rubrique-duo-col">
-      <div class="rubrique-duo-header">
-        <div class="trait"></div>
-        <h1>Amériques</h1>
-        <a href="articles/liste_categorie.php?categorie=ameriques">›</a>
-      </div>
-      <div class="rubrique-duo-body">
-        <?php foreach (array_slice($articlesAmericques, 0, 4) as $art) : ?>
-        <div class="rubrique-duo-item">
-          <div class="di-title"><a href="articles/detail.php?id=<?= (int)$art['id'] ?>"><?= htmlspecialchars($art['titre']) ?></a></div>
-          <div class="di-meta">Amériques</div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
-    <?php endif; ?>
-  </div>
-  <?php endif; ?>
-
 </main>
+
+<style>
+.loading-message {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem;
+  font-style: italic;
+}
+
+.article-list {
+  margin-bottom: 2rem;
+}
+
+.article-list-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.article-list-item img {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.article-list-item .content {
+  flex: 1;
+}
+
+.article-list-item .list-category {
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.article-list-item .list-title a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.article-list-item .list-title a:hover {
+  color: var(--accent);
+}
+
+.article-list-item .list-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.rubriques-double {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .rubriques-double {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .article-list-item {
+    flex-direction: column;
+  }
+  
+  .article-list-item img {
+    width: 100%;
+    height: 200px;
+  }
+}
+</style>
+
+<script>
+// Fonction API simplifiée pour éviter les imports
+async function apiGet(endpoint) {
+  try {
+    const response = await fetch(`/Projet-final-PHP/api/${endpoint}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erreur API:', error);
+    throw error;
+  }
+}
+
+// Fonction pour récupérer tous les articles via l'API JavaScript
+async function getAllArticles() {
+  try {
+    const data = await apiGet('articles.php?action=all');
+    console.log('Articles reçus:', data); // Debug
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Erreur lors de la récupération des articles:', error);
+    return [];
+  }
+}
+
+// Fonction pour récupérer les articles par catégorie via l'API JavaScript
+async function getArticlesByCategory(categoryName) {
+  try {
+    const allArticles = await getAllArticles();
+    return allArticles.filter(article => 
+      article.categorie && article.categorie.toLowerCase() === categoryName.toLowerCase()
+    );
+  } catch (error) {
+    console.error('Erreur lors de la récupération des articles par catégorie:', error);
+    return [];
+  }
+}
+
+// Fonction pour formater la date en français
+function formatDateFr(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  return d.getDate() + ' ' + mois[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+// Fonction pour obtenir l'image d'un article
+function getArticleImage(article) {
+  return article.image_url || IMG_DEFAULT;
+}
+
+// Fonction pour créer une carte d'article
+function createArticleCard(article) {
+  const img = getArticleImage(article);
+  return `
+    <article class="article-card-sm">
+      <img class="card-img" src="${img}" alt="${article.titre}">
+      <div class="card-category">${article.categorie || 'Non classé'}</div>
+      <h3 class="card-title">
+        <a href="articles/detail.php?id=${article.id}">${article.titre}</a>
+      </h3>
+      <div class="card-meta">${article.auteur || 'Anonyme'} — ${formatDateFr(article.date_publication)}</div>
+    </article>
+  `;
+}
+
+// Fonction pour créer un élément de liste d'articles
+function createArticleListItem(article) {
+  const img = getArticleImage(article);
+  return `
+    <div class="article-list-item">
+      <img class="list-img" src="${img}" alt="${article.titre}">
+      <div>
+        <div class="list-category">${article.categorie || 'Non classé'}</div>
+        <h3 class="list-title">
+          <a href="articles/detail.php?id=${article.id}">${article.titre}</a>
+        </h3>
+        <div class="list-meta">${article.auteur || 'Anonyme'} — ${formatDateFr(article.date_publication)}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Fonction pour créer l'article à la une
+function createFeaturedArticle(article) {
+  const img = getArticleImage(article);
+  return `
+    <div class="article-featured">
+      <img class="featured-img" src="${img}" alt="${article.titre}">
+      <div>
+        <div class="featured-category">${article.categorie || 'Non classé'}</div>
+        <h2 class="featured-title">
+          <a href="articles/detail.php?id=${article.id}">${article.titre}</a>
+        </h2>
+        <p class="featured-excerpt">${article.description}</p>
+        <div class="featured-meta">${article.auteur || 'Anonyme'} | ${formatDateFr(article.date_publication)}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Fonction pour créer un élément "En continu"
+function createEnContinuItem(article) {
+  return `
+    <div class="sidebar-item">
+      <div class="sidebar-time">${new Date(article.date_publication).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
+      <div class="sidebar-item-title">
+        <a href="articles/detail.php?id=${article.id}">${article.titre}</a>
+      </div>
+      <div class="sidebar-cat">${article.description ? article.description.substring(0, 100) + '...' : ''}</div>
+    </div>
+  `;
+}
+
+// Fonction principale pour charger l'accueil
+async function loadAccueil() {
+  console.log('Début du chargement de l\'accueil...'); // Debug
+  
+  try {
+    const allArticles = await getAllArticles();
+    console.log('Nombre d\'articles:', allArticles.length); // Debug
+    
+    if (allArticles.length === 0) {
+      document.getElementById('a-la-une-container').innerHTML = '<div class="alert alert-info">Aucun article publié pour le moment.</div>';
+      document.getElementById('dernieres-actualites-container').innerHTML = '<div class="alert alert-info">Aucun article disponible.</div>';
+      document.getElementById('plus-actualites-container').innerHTML = '<div class="alert alert-info">Aucun article disponible.</div>';
+      document.getElementById('international-container').innerHTML = '<div class="alert alert-info">Aucun article international disponible.</div>';
+      document.getElementById('europe-container').innerHTML = '<div class="alert alert-info">Aucun article européen disponible.</div>';
+      document.getElementById('afrique-container').innerHTML = '<div class="alert alert-info">Aucun article africain disponible.</div>';
+      document.getElementById('americas-container').innerHTML = '<div class="alert alert-info">Aucun article américain disponible.</div>';
+      document.getElementById('en-continu-container').innerHTML = '<div class="sidebar-item">Aucun article récent.</div>';
+      return;
+    }
+
+    console.log('Article à la une:', allArticles[0]); // Debug
+
+    // À la une (premier article)
+    const aLaUne = allArticles[0];
+    document.getElementById('a-la-une-container').innerHTML = createFeaturedArticle(aLaUne);
+
+    // Dernières actualités (articles 1-3)
+    const dernieres = allArticles.slice(1, 4);
+    document.getElementById('dernieres-actualites-container').innerHTML = 
+      dernieres.map(article => createArticleCard(article)).join('');
+
+    // Plus d'actualités (articles 4-8)
+    const plusDActualites = allArticles.slice(4, 9);
+    document.getElementById('plus-actualites-container').innerHTML = 
+      plusDActualites.map(article => createArticleListItem(article)).join('');
+
+    // Articles par catégorie
+    const international = await getArticlesByCategory('International');
+    const europe = await getArticlesByCategory('Europe');
+    const afrique = await getArticlesByCategory('Afrique');
+    const americas = await getArticlesByCategory('Amériques');
+
+    console.log('Articles International:', international.length); // Debug
+    console.log('Articles Europe:', europe.length); // Debug
+
+    document.getElementById('international-container').innerHTML = 
+      international.slice(0, 3).map(article => createArticleCard(article)).join('') || 
+      '<div class="alert alert-info">Aucun article international disponible.</div>';
+
+    document.getElementById('europe-container').innerHTML = 
+      europe.slice(0, 3).map(article => createArticleCard(article)).join('') || 
+      '<div class="alert alert-info">Aucun article européen disponible.</div>';
+
+    document.getElementById('afrique-container').innerHTML = 
+      afrique.slice(0, 3).map(article => createArticleListItem(article)).join('') || 
+      '<div class="alert alert-info">Aucun article africain disponible.</div>';
+
+    document.getElementById('americas-container').innerHTML = 
+      americas.slice(0, 3).map(article => createArticleListItem(article)).join('') || 
+      '<div class="alert alert-info">Aucun article américain disponible.</div>';
+
+    // En continu (6 derniers articles)
+    const enContinu = allArticles.slice(0, 6);
+    document.getElementById('en-continu-container').innerHTML = 
+      enContinu.map(article => createEnContinuItem(article)).join('');
+
+  } catch (error) {
+    console.error('Erreur lors du chargement de l\'accueil:', error);
+    document.querySelectorAll('.loading-message').forEach(el => {
+      el.textContent = 'Erreur de chargement. Veuillez réessayer.';
+    });
+  }
+}
+
+// Charger l'accueil quand la page est prête
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadAccueil);
+} else {
+  loadAccueil();
+}
+</script>
 
 <?php require_once "footer.php"; ?>

@@ -10,7 +10,11 @@ $method = $_SERVER["REQUEST_METHOD"];
 if ($method === "GET" && isset($_GET["action"])) {
     switch ($_GET["action"]) {
         case "all":
-            $stmt = $pdo->query("SELECT * FROM articles ORDER BY date_publication DESC");
+            $stmt = $pdo->query("SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur 
+                                   FROM articles a 
+                                   LEFT JOIN categories c ON a.categorie_id = c.id 
+                                   LEFT JOIN utilisateurs u ON a.auteur_id = u.id 
+                                   ORDER BY a.date_publication DESC");
 
             $liste_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -21,7 +25,11 @@ if ($method === "GET" && isset($_GET["action"])) {
             }
             break;
         case "search":
-            $stmt = $pdo->prepare("SELECT * FROM articles WHERE id = :id");
+            $stmt = $pdo->prepare("SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur 
+                                       FROM articles a 
+                                       LEFT JOIN categories c ON a.categorie_id = c.id 
+                                       LEFT JOIN utilisateurs u ON a.auteur_id = u.id 
+                                       WHERE a.id = :id");
             $stmt->execute([":id" => $_GET["id"]]);
 
             $article = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -33,7 +41,11 @@ if ($method === "GET" && isset($_GET["action"])) {
             }
             break;
         case "latest":
-            $stmt = $pdo->query("SELECT * FROM articles ORDER BY date_publication DESC LIMIT 5");
+            $stmt = $pdo->query("SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur 
+                                   FROM articles a 
+                                   LEFT JOIN categories c ON a.categorie_id = c.id 
+                                   LEFT JOIN utilisateurs u ON a.auteur_id = u.id 
+                                   ORDER BY a.date_publication DESC LIMIT 5");
 
             $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -49,7 +61,12 @@ if ($method === "GET" && isset($_GET["action"])) {
                 break;
             }
 
-            $stmt = $pdo->prepare("SELECT * FROM articles WHERE categorie_id = :id ORDER BY date_publication DESC");
+            $stmt = $pdo->prepare("SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur 
+                                       FROM articles a 
+                                       LEFT JOIN categories c ON a.categorie_id = c.id 
+                                       LEFT JOIN utilisateurs u ON a.auteur_id = u.id 
+                                       WHERE a.categorie_id = :id 
+                                       ORDER BY a.date_publication DESC");
             $stmt->execute([":id" => $_GET["id"]]);
 
             $articles_by_category = $stmt->fetchAll(PDO::FETCH_ASSOC);
