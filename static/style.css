@@ -62,7 +62,13 @@ img {
     display: block;
     object-fit: cover;
 }
-
+input[type="file"]::file-selector-button {
+    background-color: var(--accent-dark);
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
 /* ── STYLES POUR LES UTILISATEURS ── */
 .utilisateurs-container {
     max-width: 1200px;

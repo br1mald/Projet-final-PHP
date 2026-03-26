@@ -55,19 +55,11 @@ if ($method === "GET" && isset($_GET["action"])) {
         $body = $_POST;
     }
 
-    $nom = htmlspecialchars(trim($body["nom"] ?? ""), ENT_QUOTES, "UTF-8");
-    $prenom = htmlspecialchars(
-        trim($body["prenom"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-    $login = htmlspecialchars(trim($body["login"] ?? ""), ENT_QUOTES, "UTF-8");
-    $password = htmlspecialchars(
-        trim($body["password"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-    $role = htmlspecialchars(trim($body["role"] ?? null), ENT_QUOTES, "UTF-8");
+    $nom = trim($body["nom"] ?? "");
+    $prenom = trim($body["prenom"] ?? "");
+    $login = trim($body["login"] ?? "");
+    $password = trim($body["password"] ?? "");
+    $role = trim($body["role"] ?? null);
 
     $errors = [];
     if ($nom === "" || strlen($nom) < 3) {
@@ -146,16 +138,8 @@ if ($method === "GET" && isset($_GET["action"])) {
     $body = json_decode($raw, true);
 
     $userId = $body["id"];
-    $attribute_name = htmlspecialchars(
-        trim($body["attribute"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
-    $attribute_value = htmlspecialchars(
-        trim($body["value"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
+    $attribute_name = trim($body["attribute"] ?? "");
+    $attribute_value = trim($body["value"] ?? "");
 
     $errors = [];
 

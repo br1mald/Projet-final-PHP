@@ -89,21 +89,13 @@ if ($method === "GET" && isset($_GET["action"])) {
             //CREATE
 
             // stockage des données dans des variables php
-            $titre = htmlspecialchars(
-                trim($_POST["title"] ?? ""),
+            $titre = trim($_POST["title"] ?? "");
+            $description = trim(
+                $_POST["description"] ?? "",
                 ENT_QUOTES,
                 "UTF-8",
             );
-            $description = htmlspecialchars(
-                trim($_POST["description"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
-            $contenu = htmlspecialchars(
-                trim($_POST["content"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
+            $contenu = trim($_POST["content"] ?? "");
             $categorie_id = $_POST["category"] ?? null;
             $image_path = null;
 
@@ -190,21 +182,9 @@ if ($method === "GET" && isset($_GET["action"])) {
             // stockage des données dans des variables php
 
             $article_id = $_POST["id"] ?? null;
-            $titre = htmlspecialchars(
-                trim($_POST["titre"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
-            $description = htmlspecialchars(
-                trim($_POST["description"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
-            $contenu = htmlspecialchars(
-                trim($_POST["contenu"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
+            $titre = trim($_POST["titre"] ?? "");
+            $description = trim($_POST["description"] ?? "");
+            $contenu = trim($_POST["contenu"] ?? "");
             $categorie_id = $_POST["categorie_id"] ?? null;
             $image_sql = null;
 
@@ -256,7 +236,7 @@ if ($method === "GET" && isset($_GET["action"])) {
                 }
 
                 if ($file["size"] > 2 * 1024 * 1024) {
-                    json_error("Image trop volumineuse (max 2Mo", 400);
+                    json_error("Image trop volumineuse (max 2Mo)", 400);
                 }
 
                 $ext = pathinfo($file["name"], PATHINFO_EXTENSION);
