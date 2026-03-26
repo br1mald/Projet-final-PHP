@@ -9,10 +9,23 @@ const editForm = document.querySelector(".edit-article-form");
 const deleteFormContainer = document.querySelector(".delete-form-container");
 
 function formatDateFr(dateStr) {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   const d = new Date(dateStr);
-  const mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-  return d.getDate() + ' ' + mois[d.getMonth()] + ' ' + d.getFullYear();
+  const mois = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+  ];
+  return d.getDate() + " " + mois[d.getMonth()] + " " + d.getFullYear();
 }
 
 async function getArticle(id) {
@@ -25,15 +38,22 @@ async function renderArticleDetails(id) {
   const articleContainer = document.querySelector(".article-details");
   if (!articleContainer) return;
 
-  const imgUrl = data.image_url || data.image || window.IMG_DEFAULT || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
-  const categorie = data.categorie || '';
-  const auteur = data.auteur || '';
-  const paragraphes = (data.contenu || '').split('\n\n').filter(p => p.trim());
-  const contentHtml = paragraphes.length > 0
-    ? paragraphes.map(p => `<p>${escapeHTML(p.trim())}</p>`).join('')
-    : `<p>${escapeHTML(data.contenu || '')}</p>`;
+  const img =
+    window.IMG_DEFAULT ||
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
+  if (data.image) img = `${appBase}/${data.image}`;
 
-  let editBtns = '';
+  const categorie = data.categorie || "";
+  const auteur = data.auteur || "";
+  const paragraphes = (data.contenu || "")
+    .split("\n\n")
+    .filter((p) => p.trim());
+  const contentHtml =
+    paragraphes.length > 0
+      ? paragraphes.map((p) => `<p>${escapeHTML(p.trim())}</p>`).join("")
+      : `<p>${escapeHTML(data.contenu || "")}</p>`;
+
+  let editBtns = "";
   if (window.USER_CAN_EDIT) {
     editBtns = `<div style="display:flex; gap:0.8rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-light);">
       <a href="${appBase}/articles/modifier.php?id=${data.id}" class="btn btn-primary btn-sm">Modifier</a>
@@ -50,7 +70,7 @@ async function renderArticleDetails(id) {
         <span>${formatDateFr(data.date_publication)}</span>
       </div>
       <hr style="border:none; border-top:1px solid var(--border-light); margin-bottom:1.5rem;">
-      <img src="${imgUrl}" alt="${escapeHTML(data.titre)}" style="width:100%; height:380px; object-fit:cover; margin-bottom:1.5rem;">
+      <img src="${img}" alt="${escapeHTML(data.titre)}" style="width:100%; height:380px; object-fit:cover; margin-bottom:1.5rem;">
       <div class="article-content">${contentHtml}</div>
       <div style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border-light);">
         <a href="${appBase}/accueil.php" class="btn btn-secondary btn-sm">← Retour à l'accueil</a>
@@ -59,26 +79,38 @@ async function renderArticleDetails(id) {
     </article>`;
 
   // Populate "À lire aussi" sidebar with latest articles
-  const similairesContainer = document.getElementById('article-similaires');
+  const similairesContainer = document.getElementById("article-similaires");
   if (similairesContainer) {
     try {
-      const allArticles = await apiGet('articles.php?action=all');
-      const others = Array.isArray(allArticles) ? allArticles.filter(a => a.id != id).slice(0, 5) : [];
+      const allArticles = await apiGet("articles.php?action=all");
+      const others = Array.isArray(allArticles)
+        ? allArticles.filter((a) => a.id != id).slice(0, 5)
+        : [];
       if (others.length === 0) {
-        similairesContainer.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Aucun autre article.</div>';
+        similairesContainer.innerHTML =
+          '<div style="color:var(--muted);font-size:.85rem;">Aucun autre article.</div>';
       } else {
-        const imgDefault = window.IMG_DEFAULT || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
-        similairesContainer.innerHTML = others.map(a => {
-          const time = a.date_publication ? new Date(a.date_publication).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
-          return `<div class="sidebar-item">
+        const imgDefault =
+          window.IMG_DEFAULT ||
+          "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
+        similairesContainer.innerHTML = others
+          .map((a) => {
+            const time = a.date_publication
+              ? new Date(a.date_publication).toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "";
+            return `<div class="sidebar-item">
             <div class="sidebar-time">${time}</div>
             <div class="sidebar-item-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></div>
-            <div class="sidebar-cat">${escapeHTML((a.description || '').substring(0, 100))}${(a.description || '').length > 100 ? '…' : ''}</div>
+            <div class="sidebar-cat">${escapeHTML((a.description || "").substring(0, 100))}${(a.description || "").length > 100 ? "…" : ""}</div>
           </div>`;
-        }).join('');
+          })
+          .join("");
       }
     } catch (e) {
-      similairesContainer.innerHTML = '';
+      similairesContainer.innerHTML = "";
     }
   }
 }
@@ -87,77 +119,93 @@ async function getLatestArticles() {
   const data = await apiGet(`articles.php?action=all`);
 
   if (!Array.isArray(data) || data.length === 0) {
-    const noArticle = '<div style="text-align:center;color:#888;padding:2rem;">Aucun article disponible.</div>';
-    const c1 = document.getElementById('a-la-une-container');
-    const c2 = document.getElementById('dernieres-actualites-container');
+    const noArticle =
+      '<div style="text-align:center;color:#888;padding:2rem;">Aucun article disponible.</div>';
+    const c1 = document.getElementById("a-la-une-container");
+    const c2 = document.getElementById("dernieres-actualites-container");
     if (c1) c1.innerHTML = noArticle;
     if (c2) c2.innerHTML = noArticle;
     return;
   }
 
-  const imgDefault = window.IMG_DEFAULT || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
+  const imgDefault =
+    window.IMG_DEFAULT ||
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
 
   // À la une (first article)
-  const aLaUneContainer = document.getElementById('a-la-une-container');
+  const aLaUneContainer = document.getElementById("a-la-une-container");
   if (aLaUneContainer) {
     const a = data[0];
-    const img = a.image_url || imgDefault;
+    const img = a.image || imgDefault;
     aLaUneContainer.innerHTML = `
       <div class="article-featured">
         <img class="featured-img" src="${img}" alt="${escapeHTML(a.titre)}">
         <div>
-          <div class="featured-category">${escapeHTML(a.categorie || '')}</div>
+          <div class="featured-category">${escapeHTML(a.categorie || "")}</div>
           <h2 class="featured-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></h2>
-          <p class="featured-excerpt">${escapeHTML(a.description || '')}</p>
-          <div class="featured-meta">${escapeHTML(a.auteur || '')} | ${formatDateFr(a.date_publication)}</div>
+          <p class="featured-excerpt">${escapeHTML(a.description || "")}</p>
+          <div class="featured-meta">${escapeHTML(a.auteur || "")} | ${formatDateFr(a.date_publication)}</div>
         </div>
       </div>`;
   }
 
   // Dernières actualités (articles 1-3)
-  const dernieresContainer = document.getElementById('dernieres-actualites-container');
+  const dernieresContainer = document.getElementById(
+    "dernieres-actualites-container",
+  );
   if (dernieresContainer) {
     const dernieres = data.slice(1, 4);
-    dernieresContainer.innerHTML = dernieres.map(a => {
-      const img = a.image_url || imgDefault;
-      return `<article class="article-card-sm">
+    dernieresContainer.innerHTML = dernieres
+      .map((a) => {
+        const img = a.image || imgDefault;
+        return `<article class="article-card-sm">
         <img class="card-img" src="${img}" alt="${escapeHTML(a.titre)}">
-        <div class="card-category">${escapeHTML(a.categorie || '')}</div>
+        <div class="card-category">${escapeHTML(a.categorie || "")}</div>
         <h3 class="card-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></h3>
-        <div class="card-meta">${escapeHTML(a.auteur || '')} — ${formatDateFr(a.date_publication)}</div>
+        <div class="card-meta">${escapeHTML(a.auteur || "")} — ${formatDateFr(a.date_publication)}</div>
       </article>`;
-    }).join('');
+      })
+      .join("");
   }
 
   // Plus d'actualités (articles 4-8)
-  const plusContainer = document.getElementById('plus-actualites-container');
+  const plusContainer = document.getElementById("plus-actualites-container");
   if (plusContainer) {
     const plus = data.slice(4, 9);
-    plusContainer.innerHTML = plus.map(a => {
-      const img = a.image_url || imgDefault;
-      return `<div class="article-list-item">
+    plusContainer.innerHTML = plus
+      .map((a) => {
+        const img = a.image || imgDefault;
+        return `<div class="article-list-item">
         <img src="${img}" alt="${escapeHTML(a.titre)}">
         <div class="content">
-          <div class="list-category">${escapeHTML(a.categorie || '')}</div>
+          <div class="list-category">${escapeHTML(a.categorie || "")}</div>
           <h3 class="list-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></h3>
-          <div class="list-meta">${escapeHTML(a.auteur || '')} — ${formatDateFr(a.date_publication)}</div>
+          <div class="list-meta">${escapeHTML(a.auteur || "")} — ${formatDateFr(a.date_publication)}</div>
         </div>
       </div>`;
-    }).join('');
+      })
+      .join("");
   }
 
   // En continu sidebar (first 6)
-  const enContinuContainer = document.getElementById('en-continu-container');
+  const enContinuContainer = document.getElementById("en-continu-container");
   if (enContinuContainer) {
     const enContinu = data.slice(0, 6);
-    enContinuContainer.innerHTML = enContinu.map(a => {
-      const time = a.date_publication ? new Date(a.date_publication).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
-      return `<div class="sidebar-item">
+    enContinuContainer.innerHTML = enContinu
+      .map((a) => {
+        const time = a.date_publication
+          ? new Date(a.date_publication).toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "";
+        return `<div class="sidebar-item">
         <div class="sidebar-time">${time}</div>
         <div class="sidebar-item-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></div>
-        <div class="sidebar-cat">${escapeHTML((a.description || '').substring(0, 100))}${(a.description || '').length > 100 ? '…' : ''}</div>
+        <div class="sidebar-cat">${escapeHTML((a.description || "").substring(0, 100))}${(a.description || "").length > 100 ? "…" : ""}</div>
       </div>`;
-    }).join('');
+      })
+      .join("");
   }
 }
 
@@ -178,7 +226,8 @@ function validatePayload(payload, method) {
       errors.titre = "Le titre doit contenir au moins 3 caractères";
     }
     if (!payload.description || payload.description.trim().length < 10) {
-      errors.description = "La description courte doit contenir au moins 10 caractères.";
+      errors.description =
+        "La description courte doit contenir au moins 10 caractères.";
     }
     if (!payload.contenu || payload.contenu.trim().length < 20) {
       errors.contenu = "Le contenu doit contenir au moins 20 caractères.";
@@ -196,11 +245,21 @@ function validatePayload(payload, method) {
         errors.id = "Article invalide";
       else if (payload.attribute === "titre" && payload.value.trim().length < 3)
         errors.titre = "Le titre doit contenir au moins 3 caractères";
-      else if (payload.attribute === "description" && payload.value.trim().length < 10)
-        errors.description = "La description courte doit contenir au moins 10 caractères.";
-      else if (payload.attribute === "contenu" && payload.value.trim().length < 20)
+      else if (
+        payload.attribute === "description" &&
+        payload.value.trim().length < 10
+      )
+        errors.description =
+          "La description courte doit contenir au moins 10 caractères.";
+      else if (
+        payload.attribute === "contenu" &&
+        payload.value.trim().length < 20
+      )
         errors.contenu = "Le contenu doit contenir au moins 20 caractères.";
-      else if (payload.attribute === "category_id" && isNaN(Number(payload.value)))
+      else if (
+        payload.attribute === "category_id" &&
+        isNaN(Number(payload.value))
+      )
         errors.categorie_id = "Veuillez choisir une catégorie valide.";
     } else errors.attributeValue = "Veuillez choisir un attribut";
   }
@@ -404,7 +463,9 @@ function searchBar() {
     }
 
     try {
-      const articles = await apiGet(`articles.php?action=search_bar&input=${input}`);
+      const articles = await apiGet(
+        `articles.php?action=search_bar&input=${input}`,
+      );
 
       if (articles.length === 0) {
         queryResults.innerHTML = "Aucun résultat";
