@@ -35,47 +35,6 @@ const IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5
       <div id="plus-actualites-container" class="article-list">
         <div class="loading-message">Chargement des actualités...</div>
       </div>
-
-      <!-- RUBRIQUE : ACTUALITÉS (International) -->
-      <div class="rubrique-header">
-        <div class="trait"></div>
-        <h2>International</h2>
-      </div>
-      <div id="international-container" class="articles-grid-3">
-        <div class="loading-message">Chargement des articles internationaux...</div>
-      </div>
-
-      <!-- RUBRIQUE : EUROPE -->
-      <div class="rubrique-header">
-        <div class="trait"></div>
-        <h2>Europe</h2>
-      </div>
-      <div id="europe-container" class="articles-grid-3">
-        <div class="loading-message">Chargement des articles européens...</div>
-      </div>
-
-      <!-- RUBRIQUES : AFRIQUE + AMÉRIQUES -->
-      <div class="rubriques-double">
-        <div class="rubrique-col">
-          <div class="rubrique-header">
-            <div class="trait"></div>
-            <h2>Afrique</h2>
-          </div>
-          <div id="afrique-container" class="article-list">
-            <div class="loading-message">Chargement des articles africains...</div>
-          </div>
-        </div>
-
-        <div class="rubrique-col">
-          <div class="rubrique-header">
-            <div class="trait"></div>
-            <h2>Amériques</h2>
-          </div>
-          <div id="americas-container" class="article-list">
-            <div class="loading-message">Chargement des articles américains...</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- SIDEBAR : En continu (derniers articles de la BDD) -->
@@ -143,19 +102,7 @@ const IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5
   margin-top: 0.5rem;
 }
 
-.rubriques-double {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
 @media (max-width: 768px) {
-  .rubriques-double {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
   .article-list-item {
     flex-direction: column;
   }
@@ -296,10 +243,6 @@ async function loadAccueil() {
       document.getElementById('a-la-une-container').innerHTML = '<div class="alert alert-info">Aucun article publié pour le moment.</div>';
       document.getElementById('dernieres-actualites-container').innerHTML = '<div class="alert alert-info">Aucun article disponible.</div>';
       document.getElementById('plus-actualites-container').innerHTML = '<div class="alert alert-info">Aucun article disponible.</div>';
-      document.getElementById('international-container').innerHTML = '<div class="alert alert-info">Aucun article international disponible.</div>';
-      document.getElementById('europe-container').innerHTML = '<div class="alert alert-info">Aucun article européen disponible.</div>';
-      document.getElementById('afrique-container').innerHTML = '<div class="alert alert-info">Aucun article africain disponible.</div>';
-      document.getElementById('americas-container').innerHTML = '<div class="alert alert-info">Aucun article américain disponible.</div>';
       document.getElementById('en-continu-container').innerHTML = '<div class="sidebar-item">Aucun article récent.</div>';
       return;
     }
@@ -319,31 +262,6 @@ async function loadAccueil() {
     const plusDActualites = allArticles.slice(4, 9);
     document.getElementById('plus-actualites-container').innerHTML = 
       plusDActualites.map(article => createArticleListItem(article)).join('');
-
-    // Articles par catégorie
-    const international = await getArticlesByCategory('International');
-    const europe = await getArticlesByCategory('Europe');
-    const afrique = await getArticlesByCategory('Afrique');
-    const americas = await getArticlesByCategory('Amériques');
-
-    console.log('Articles International:', international.length); // Debug
-    console.log('Articles Europe:', europe.length); // Debug
-
-    document.getElementById('international-container').innerHTML = 
-      international.slice(0, 3).map(article => createArticleCard(article)).join('') || 
-      '<div class="alert alert-info">Aucun article international disponible.</div>';
-
-    document.getElementById('europe-container').innerHTML = 
-      europe.slice(0, 3).map(article => createArticleCard(article)).join('') || 
-      '<div class="alert alert-info">Aucun article européen disponible.</div>';
-
-    document.getElementById('afrique-container').innerHTML = 
-      afrique.slice(0, 3).map(article => createArticleListItem(article)).join('') || 
-      '<div class="alert alert-info">Aucun article africain disponible.</div>';
-
-    document.getElementById('americas-container').innerHTML = 
-      americas.slice(0, 3).map(article => createArticleListItem(article)).join('') || 
-      '<div class="alert alert-info">Aucun article américain disponible.</div>';
 
     // En continu (6 derniers articles)
     const enContinu = allArticles.slice(0, 6);

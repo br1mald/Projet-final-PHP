@@ -1,5 +1,38 @@
-import { showFormErrors } from "./validation.js";
-import { apiGet, apiPost, apiDelete } from "./api.js";
+// Fonction API simplifiée pour éviter les imports
+async function apiGet(endpoint) {
+  try {
+    const response = await fetch(`/Projet-final-PHP/api/${endpoint}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erreur API:', error);
+    throw error;
+  }
+}
+
+async function apiDelete(endpoint, data) {
+  try {
+    const response = await fetch(`/Projet-final-PHP/api/${endpoint}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur API:', error);
+    throw error;
+  }
+}
 
 const categoriesContainer = document.querySelector(".categories-container");
 const categoriesGrid = document.getElementById("categoriesGrid");
@@ -35,29 +68,18 @@ function getCategoryIcon(categoryName) {
     return '📁'; // Icône par défaut
 }
 
-function getCategoryColor(index) {
-    const colors = [
-        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-        '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'
-    ];
-    return colors[index % colors.length];
-}
-
-function createCategoryCard(category, index) {
+function createCategoryCard(category) {
     const card = document.createElement("div");
     card.className = "category-card";
     card.innerHTML = `
-        <div class="category-icon" style="background-color: ${getCategoryColor(index)};">
-            ${getCategoryIcon(category.nom)}
-        </div>
-        <div class="category-info">
+        <div class="category-header">
+            <div class="category-icon">${getCategoryIcon(category.nom)}</div>
             <h3 class="category-name">${escapeHTML(category.nom)}</h3>
-            <div class="category-stats">
-                <span class="stat-item">
-                    <i class="icon-doc"></i>
-                    <span class="stat-number">${category.articles_count || 0}</span>
-                    articles
-                </span>
+        </div>
+        <div class="category-stats">
+            <div class="stat-item">
+                <span class="stat-number">${category.articles_count || 0}</span>
+                <span class="stat-label">articles</span>
             </div>
         </div>
         <div class="category-actions">
@@ -86,8 +108,8 @@ async function getAllCategories() {
             return;
         }
         
-        data.forEach((category, index) => {
-            categoriesGrid.appendChild(createCategoryCard(category, index));
+        data.forEach(category => {
+            categoriesGrid.appendChild(createCategoryCard(category));
         });
         
         console.log(`Chargé ${data.length} catégories`);
@@ -100,7 +122,7 @@ async function getAllCategories() {
 }
 
 async function deleteCategory(categoryId, categoryName) {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryName}" ?\n\nCette action est irréversible.`)) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryName}" ?`)) {
         return;
     }
     
@@ -132,7 +154,7 @@ function showNotification(message, type = 'info') {
 }
 
 // Charger les catégories au chargement de la page
-if (window.location.pathname.includes("/categories/liste.php") && categoriesGrid) {
+if (window.location.pathname.includes("categories/liste.php")) {
     getAllCategories();
 }
 

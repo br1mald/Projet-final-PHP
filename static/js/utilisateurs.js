@@ -1,5 +1,38 @@
-import { showFormErrors } from "./validation.js";
-import { apiGet, apiPost, apiDelete } from "./api.js";
+// Fonction API simplifiée pour éviter les imports
+async function apiGet(endpoint) {
+  try {
+    const response = await fetch(`/Projet-final-PHP/api/${endpoint}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erreur API:', error);
+    throw error;
+  }
+}
+
+async function apiDelete(endpoint, data) {
+  try {
+    const response = await fetch(`/Projet-final-PHP/api/${endpoint}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur API:', error);
+    throw error;
+  }
+}
 
 const usersContainer = document.querySelector(".utilisateurs-container");
 const usersGrid = document.getElementById("usersGrid");
@@ -31,7 +64,7 @@ function getRoleBadge(role) {
         'administrateur': '<span class="badge badge-admin">Administrateur</span>',
         'editeur': '<span class="badge badge-editor">Éditeur</span>'
     };
-    return badges[role] || '<span class="badge badge-default">Inconnu</span>';
+    return badges[role] || '<span class="badge badge-default">Visiteur</span>';
 }
 
 function createUserCard(user) {

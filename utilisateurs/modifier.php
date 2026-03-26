@@ -1,236 +1,247 @@
 <?php
 session_start();
+
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['role'])) {
+    header('Location: ../connexion.php');
+    exit;
+}
+
+// Vérifier si l'utilisateur est administrateur
+$userRole = $_SESSION['role'] ?? 'visiteur';
+if (!in_array($userRole, ['administrateur'])) {
+    header('Location: ../accueil.php');
+    exit;
+}
+
+// Récupérer l'ID de l'utilisateur
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id <= 0) {
+    header('Location: liste.php');
+    exit;
+}
+
+$pageTitle = "Modifier l'utilisateur";
 require_once __DIR__ . '/../entete.php';
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../menu.php';
-
-// Vérifier si l'utilisateur a le droit de modifier un utilisateur
-$role = $_SESSION['role'] ?? 'visiteur';
-if ($role !== 'administrateur') {
-    header('Location: /Projet-final-PHP/accueil.php');
-    exit;
-}
-
-$user_id = $_GET['id'] ?? null;
-
-if (!$user_id || !is_numeric($user_id)) {
-    header('Location: /Projet-final-PHP/utilisateurs/liste.php');
-    exit;
-}
-
-// Récupérer l'utilisateur depuis la base de données
-try {
-    $stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE id = ?");
-    $stmt->execute([$user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$user) {
-        header('Location: /Projet-final-PHP/utilisateurs/liste.php');
-        exit;
-    }
-    
-} catch (PDOException $e) {
-    error_log("Erreur base de données: " . $e->getMessage());
-    header('Location: /Projet-final-PHP/utilisateurs/liste.php');
-    exit;
-}
-
-$pageTitle = "Modifier l'utilisateur : " . htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
 ?>
 
-<main class="admin-page">
-  <div class="admin-header">
+<main class="container">
+  <div class="page-header">
     <h1>Modifier l'utilisateur</h1>
-    <div class="admin-actions">
-      <a href="/Projet-final-PHP/utilisateurs/liste.php" class="btn btn-secondary">Retour à la liste</a>
-      <a href="/Projet-final-PHP/accueil.php" class="btn btn-secondary">Retour à l'accueil</a>
+    <div class="breadcrumb">
+      <a href="../accueil.php">Accueil</a> &gt; 
+      <a href="liste.php">Gestion des utilisateurs</a> &gt; 
+      <span>Modifier</span>
     </div>
   </div>
 
-  <div class="user-form-container">
-    <form id="editUserForm" class="user-form">
-      <input type="hidden" name="id" value="<?= $user_id ?>">
-      
-      <div class="form-section">
-        <h3>Informations personnelles</h3>
-        
+  <div class="admin-form-container">
+    <form id="editUserForm" class="form-card">
+      <div class="form-header">
+        <h2>Modifier l'utilisateur</h2>
+        <p>Modifiez les informations de l'utilisateur ci-dessous.</p>
+      </div>
+
+      <div class="form-body">
         <div class="form-row">
           <div class="form-group">
-            <label for="nom">Nom *</label>
-            <input type="text" id="nom" name="nom" required minlength="2" maxlength="50" class="form-control" value="<?= htmlspecialchars($user['nom']) ?>" placeholder="Dupont">
-            <div class="form-help">Minimum 2 caractères</div>
-            <div class="form-error" id="nom-error"></div>
+            <label for="nom" class="form-label">Nom *</label>
+            <input 
+              type="text" 
+              id="nom" 
+              name="nom" 
+              class="form-input" 
+              required
+              minlength="2"
+              maxlength="50"
+              placeholder="Nom de famille"
+            >
           </div>
 
           <div class="form-group">
-            <label for="prenom">Prénom *</label>
-            <input type="text" id="prenom" name="prenom" required minlength="2" maxlength="50" class="form-control" value="<?= htmlspecialchars($user['prenom']) ?>" placeholder="Jean">
-            <div class="form-help">Minimum 2 caractères</div>
-            <div class="form-error" id="prenom-error"></div>
+            <label for="prenom" class="form-label">Prénom *</label>
+            <input 
+              type="text" 
+              id="prenom" 
+              name="prenom" 
+              class="form-input" 
+              required
+              minlength="2"
+              maxlength="50"
+              placeholder="Prénom"
+            >
           </div>
         </div>
 
         <div class="form-group">
-          <label for="date">Date</label>
-          <input type="date" id="date" name="date" class="form-control" value="<?= htmlspecialchars($user['date'] ?? '') ?>">
-          <div class="form-help">Optionnel</div>
-          <div class="form-error" id="date-error"></div>
+          <label for="login" class="form-label">Login *</label>
+          <input 
+            type="text" 
+            id="login" 
+            name="login" 
+            class="form-input" 
+            required
+            minlength="3"
+            maxlength="50"
+            placeholder="Identifiant de connexion"
+          >
+          <small class="form-help">L'identifiant unique pour la connexion.</small>
         </div>
-      </div>
 
-      <div class="form-section">
-        <h3>Informations du compte</h3>
-        
         <div class="form-row">
           <div class="form-group">
-            <label for="login">Login *</label>
-            <input type="text" id="login" name="login" required minlength="3" maxlength="50" class="form-control" value="<?= htmlspecialchars($user['login']) ?>" placeholder="jdupont">
-            <div class="form-help">Minimum 3 caractères, unique</div>
-            <div class="form-error" id="login-error"></div>
+            <label for="mot_de_passe" class="form-label">Mot de passe</label>
+            <input 
+              type="password" 
+              id="mot_de_passe" 
+              name="mot_de_passe" 
+              class="form-input"
+              minlength="6"
+              maxlength="255"
+              placeholder="Laisser vide pour ne pas modifier"
+            >
+            <small class="form-help">Laissez vide pour conserver le mot de passe actuel.</small>
           </div>
 
           <div class="form-group">
-            <label for="role">Rôle *</label>
-            <select id="role" name="role" required class="form-control">
-              <option value="">Sélectionner un rôle</option>
-              <option value="administrateur" <?= $user['role'] === 'administrateur' ? 'selected' : '' ?>>Administrateur</option>
-              <option value="editeur" <?= $user['role'] === 'editeur' ? 'selected' : '' ?>>Éditeur</option>
-              <option value="visiteur" <?= $user['role'] === 'visiteur' ? 'selected' : '' ?>>Visiteur</option>
+            <label for="confirm_password" class="form-label">Confirmer le mot de passe</label>
+            <input 
+              type="password" 
+              id="confirm_password" 
+              name="confirm_password" 
+              class="form-input"
+              placeholder="Confirmer le nouveau mot de passe"
+            >
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="role" class="form-label">Rôle *</label>
+            <select id="role" name="role" class="form-select" required>
+              <option value="visiteur">Visiteur</option>
+              <option value="editeur">Éditeur</option>
+              <option value="administrateur">Administrateur</option>
             </select>
-            <div class="form-help">Définit les permissions de l'utilisateur</div>
-            <div class="form-error" id="role-error"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="mot_de_passe">Nouveau mot de passe</label>
-            <input type="password" id="mot_de_passe" name="mot_de_passe" minlength="6" class="form-control" placeholder="Laisser vide pour ne pas changer">
-            <div class="form-help">Minimum 6 caractères. Laisser vide pour conserver l'actuel</div>
-            <div class="form-error" id="mot_de_passe-error"></div>
+            <small class="form-help">Définit les permissions de l'utilisateur.</small>
           </div>
 
           <div class="form-group">
-            <label for="confirm_password">Confirmer le mot de passe</label>
-            <input type="password" id="confirm_password" name="confirm_password" minlength="6" class="form-control" placeholder="•••••••">
-            <div class="form-help">Doit être identique au nouveau mot de passe</div>
-            <div class="form-error" id="confirm_password-error"></div>
+            <label for="date" class="form-label">Date de naissance</label>
+            <input 
+              type="date" 
+              id="date" 
+              name="date" 
+              class="form-input"
+              max="<?php echo date('Y-m-d'); ?>"
+            >
+            <small class="form-help">Optionnel : Date de naissance.</small>
           </div>
         </div>
+
+        <input type="hidden" id="userId" name="id" value="<?= $id ?>">
       </div>
 
-      <div class="form-actions">
+      <div class="form-footer">
         <button type="submit" class="btn btn-primary">
-          <span class="btn-text">Enregistrer les modifications</span>
-          <span class="btn-loading" style="display: none;">Modification en cours...</span>
+          <i class="icon-save"></i> Enregistrer les modifications
         </button>
-        <button type="button" onclick="history.back()" class="btn btn-outline">Annuler</button>
+        <a href="liste.php" class="btn btn-secondary">
+          <i class="icon-cancel"></i> Annuler
+        </a>
       </div>
     </form>
   </div>
 </main>
 
 <style>
-.user-form-container {
+.admin-form-container {
   max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
+  margin: 2rem auto;
 }
 
-.user-form {
+.form-card {
   background: #fff;
-  padding: 2.5rem;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid var(--border-light);
+  overflow: hidden;
 }
 
-.form-section {
-  margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
+.form-header {
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-bottom: 1px solid var(--border-light);
 }
 
-.form-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+.form-header h2 {
+  color: var(--text);
+  margin-bottom: 0.5rem;
 }
 
-.form-section h3 {
-  color: var(--text);
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--accent);
+.form-header p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.form-body {
+  padding: 2rem;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .form-group {
   margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.form-label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
   color: var(--text);
-  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-.form-control {
+.form-input, .form-select {
   width: 100%;
   padding: 0.875rem;
   border: 2px solid var(--border-light);
   border-radius: 8px;
   font-size: 1rem;
-  font-family: var(--font-body);
   transition: all 0.3s ease;
   background: #fff;
 }
 
-.form-control:focus {
+.form-input:focus, .form-select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(187, 249, 252, 0.2);
 }
 
-.form-control:hover {
-  border-color: #d0d0d0;
+.form-input.error, .form-select.error {
+  border-color: #dc3545;
 }
 
 .form-help {
-  font-size: 0.8rem;
+  display: block;
   color: var(--muted);
-  margin-top: 0.25rem;
-  font-style: italic;
-}
-
-.form-error {
-  color: var(--error);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   margin-top: 0.5rem;
-  display: none;
-  font-weight: 500;
 }
 
-.form-actions {
+.form-footer {
+  padding: 2rem;
+  background: #f8f9fa;
+  border-top: 1px solid var(--border-light);
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  margin-top: 2.5rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border-light);
 }
 
 .btn {
-  padding: 0.875rem 1.75rem;
+  padding: 0.875rem 1.5rem;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -241,7 +252,6 @@ $pageTitle = "Modifier l'utilisateur : " . htmlspecialchars($user['prenom'] . ' 
   align-items: center;
   gap: 0.5rem;
   transition: all 0.3s ease;
-  position: relative;
 }
 
 .btn-primary {
@@ -252,88 +262,74 @@ $pageTitle = "Modifier l'utilisateur : " . htmlspecialchars($user['prenom'] . ' 
 .btn-primary:hover {
   background: var(--accent-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(187, 249, 252, 0.3);
 }
 
-.btn-outline {
-  background: transparent;
-  color: var(--muted);
-  border: 2px solid var(--border-light);
-}
-
-.btn-outline:hover {
+.btn-secondary {
   background: var(--border-light);
   color: var(--text);
 }
 
-.loading .btn-text {
-  display: none;
+.btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 .loading {
-  opacity: 0.7;
+  opacity: 0.6;
   pointer-events: none;
 }
 
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.page-header {
   margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
 }
 
-.admin-header h1 {
+.page-header h1 {
   color: var(--text);
-  font-size: 1.8rem;
-  font-weight: 700;
+  margin-bottom: 0.5rem;
 }
 
-.admin-actions {
-  display: flex;
-  gap: 0.75rem;
+.breadcrumb {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
-.success-message {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  color: #155724;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  border: 1px solid #c3e6cb;
-  font-weight: 500;
+.breadcrumb a {
+  color: var(--accent);
+  text-decoration: none;
 }
 
-.error-message {
-  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-  color: #721c24;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  border: 1px solid #f5c6cb;
-  font-weight: 500;
+.breadcrumb a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {
+  .admin-form-container {
+    margin: 1rem;
+  }
+  
   .form-row {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0;
   }
   
-  .user-form {
-    padding: 1.5rem;
-  }
-  
-  .admin-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  .form-actions {
+  .form-footer {
     flex-direction: column;
   }
   
@@ -345,102 +341,194 @@ $pageTitle = "Modifier l'utilisateur : " . htmlspecialchars($user['prenom'] . ' 
 </style>
 
 <script>
+// Fonction API simplifiée
+async function apiRequest(method, endpoint, data = null) {
+  try {
+    const options = {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    };
+
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(`/Projet-final-PHP/api/${endpoint}`, options);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur API:', error);
+    throw error;
+  }
+}
+
+// Charger les données de l'utilisateur
+async function loadUser() {
+  try {
+    const userId = document.getElementById('userId').value;
+    const data = await apiRequest('GET', `utilisateurs.php?action=search&id=${userId}`);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    // Remplir le formulaire
+    document.getElementById('nom').value = data.nom || '';
+    document.getElementById('prenom').value = data.prenom || '';
+    document.getElementById('login').value = data.login || '';
+    document.getElementById('role').value = data.role || 'visiteur';
+    document.getElementById('date').value = data.date || '';
+    
+  } catch (error) {
+    console.error('Erreur lors du chargement:', error);
+    showAlert('Erreur lors du chargement de l\'utilisateur: ' + error.message, 'error');
+  }
+}
+
+// Afficher une alerte
+function showAlert(message, type = 'success') {
+  const existingAlert = document.querySelector('.alert');
+  if (existingAlert) {
+    existingAlert.remove();
+  }
+
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type}`;
+  alert.textContent = message;
+  
+  const form = document.getElementById('editUserForm');
+  form.parentNode.insertBefore(alert, form);
+  
+  // Auto-suppression après 5 secondes
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.remove();
+    }
+  }, 5000);
+}
+
+// Valider le formulaire
+function validateForm() {
+  const nom = document.getElementById('nom').value.trim();
+  const prenom = document.getElementById('prenom').value.trim();
+  const login = document.getElementById('login').value.trim();
+  const motDePasse = document.getElementById('mot_de_passe').value;
+  const confirmPassword = document.getElementById('confirm_password').value;
+  const role = document.getElementById('role').value;
+  const errors = [];
+
+  // Validation du nom
+  if (!nom) {
+    errors.push('Le nom est obligatoire');
+  } else if (nom.length < 2) {
+    errors.push('Le nom doit contenir au moins 2 caractères');
+  } else if (nom.length > 50) {
+    errors.push('Le nom ne peut pas dépasser 50 caractères');
+  }
+
+  // Validation du prénom
+  if (!prenom) {
+    errors.push('Le prénom est obligatoire');
+  } else if (prenom.length < 2) {
+    errors.push('Le prénom doit contenir au moins 2 caractères');
+  } else if (prenom.length > 50) {
+    errors.push('Le prénom ne peut pas dépasser 50 caractères');
+  }
+
+  // Validation du login
+  if (!login) {
+    errors.push('Le login est obligatoire');
+  } else if (login.length < 3) {
+    errors.push('Le login doit contenir au moins 3 caractères');
+  } else if (login.length > 50) {
+    errors.push('Le login ne peut pas dépasser 50 caractères');
+  }
+
+  // Validation du mot de passe (seulement si fourni)
+  if (motDePasse) {
+    if (motDePasse.length < 6) {
+      errors.push('Le mot de passe doit contenir au moins 6 caractères');
+    } else if (motDePasse !== confirmPassword) {
+      errors.push('Les mots de passe ne correspondent pas');
+    }
+  }
+
+  // Afficher les erreurs
+  if (errors.length > 0) {
+    showAlert(errors.join(', '), 'error');
+    return false;
+  }
+
+  return true;
+}
+
+// Soumettre le formulaire
 document.getElementById('editUserForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   
-  // Nettoyer les erreurs précédentes
-  document.querySelectorAll('.form-error').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.error-message, .success-message').forEach(el => el.remove());
-  
-  const formData = new FormData(this);
-  const data = {
-    id: formData.get('id'),
-    nom: formData.get('nom'),
-    prenom: formData.get('prenom'),
-    date: formData.get('date'),
-    login: formData.get('login'),
-    mot_de_passe: formData.get('mot_de_passe'),
-    confirm_password: formData.get('confirm_password'),
-    role: formData.get('role')
-  };
-  
-  // Validation client
-  const errors = {};
-  if (!data.nom || data.nom.length < 2) errors.nom = "Nom requis (min 2 caractères)";
-  if (!data.prenom || data.prenom.length < 2) errors.prenom = "Prénom requis (min 2 caractères)";
-  if (!data.login || data.login.length < 3) errors.login = "Login requis (min 3 caractères)";
-  if (data.mot_de_passe && data.mot_de_passe.length < 6) errors.mot_de_passe = "Mot de passe trop court (min 6 caractères)";
-  if (data.mot_de_passe && data.mot_de_passe !== data.confirm_password) errors.confirm_password = "Les mots de passe ne correspondent pas";
-  if (!data.role) errors.role = "Rôle requis";
-  
-  if (Object.keys(errors).length > 0) {
-    Object.keys(errors).forEach(field => {
-      const errorElement = document.getElementById(field + '-error');
-      if (errorElement) {
-        errorElement.textContent = errors[field];
-        errorElement.style.display = 'block';
-      }
-    });
+  if (!validateForm()) {
     return;
   }
-  
-  // Ajouter une classe de chargement
-  this.classList.add('loading');
-  document.querySelector('.btn-text').style.display = 'none';
-  document.querySelector('.btn-loading').style.display = 'inline';
-  
+
+  const formData = {
+    id: document.getElementById('userId').value,
+    nom: document.getElementById('nom').value.trim(),
+    prenom: document.getElementById('prenom').value.trim(),
+    login: document.getElementById('login').value.trim(),
+    role: document.getElementById('role').value,
+    date: document.getElementById('date').value
+  };
+
+  // Ajouter le mot de passe seulement s'il est fourni
+  const motDePasse = document.getElementById('mot_de_passe').value;
+  if (motDePasse) {
+    formData.mot_de_passe = motDePasse;
+    formData.confirm_password = document.getElementById('confirm_password').value;
+  }
+
   try {
-    const response = await fetch('/Projet-final-PHP/api/utilisateurs.php', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.ok) {
-      // Succès
-      const successDiv = document.createElement('div');
-      successDiv.className = 'success-message';
-      successDiv.textContent = 'Utilisateur modifié avec succès ! Redirection en cours...';
-      this.insertBefore(successDiv, this.firstChild);
+    // Ajouter l'indicateur de chargement
+    const form = document.getElementById('editUserForm');
+    form.classList.add('loading');
+
+    const result = await apiRequest('PUT', 'utilisateurs.php', formData);
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    if (result.ok) {
+      showAlert('Utilisateur modifié avec succès !', 'success');
       
-      // Rediriger vers la liste après 2 secondes
+      // Rediriger après 2 secondes
       setTimeout(() => {
-        window.location.href = '/Projet-final-PHP/utilisateurs/liste.php';
+        window.location.href = 'liste.php';
       }, 2000);
     } else {
-      // Erreurs de validation
-      if (result.errors) {
-        Object.keys(result.errors).forEach(field => {
-          const errorElement = document.getElementById(field + '-error');
-          if (errorElement) {
-            errorElement.textContent = result.errors[field];
-            errorElement.style.display = 'block';
-          }
-        });
-      } else {
-        // Erreur générale
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = result.error || 'Une erreur est survenue lors de la modification.';
-        this.insertBefore(errorDiv, this.firstChild);
-      }
+      throw new Error('Réponse inattendue du serveur');
     }
+
   } catch (error) {
-    console.error('Erreur:', error);
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = 'Erreur de connexion. Veuillez réessayer.';
-    this.insertBefore(errorDiv, this.firstChild);
+    console.error('Erreur lors de la modification:', error);
+    showAlert('Erreur lors de la modification: ' + error.message, 'error');
   } finally {
-    this.classList.remove('loading');
-    document.querySelector('.btn-text').style.display = 'inline';
-    document.querySelector('.btn-loading').style.display = 'none';
+    // Retirer l'indicateur de chargement
+    form.classList.remove('loading');
   }
 });
+
+// Charger les données au chargement de la page
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadUser);
+} else {
+  loadUser();
+}
 </script>
 
 <?php require_once __DIR__ . '/../footer.php'; ?>
