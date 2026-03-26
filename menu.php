@@ -15,7 +15,7 @@ if (file_exists(__DIR__ . "/includes/db.php")) {
         $counts_by_name = [];
         $total_articles = 0;
         foreach ($category_counts as $count) {
-            $counts_by_name[strtolower($count["nom"])] =
+            $counts_by_name[mb_strtolower($count["nom"], "UTF-8")] =
                 $count["article_count"];
             $total_articles += $count["article_count"];
         }
@@ -56,9 +56,9 @@ if (file_exists(__DIR__ . "/includes/db.php")) {
     : "" ?>">
         Technologie
         <?php if (isset($category_counts["technologie"])): ?>
-          <span class="category-count"><?= $category_counts[
-              "technologie"
-          ] ?></span>
+          <span class="category-count">
+              <?= $category_counts["technologie"] ?>
+          </span>
         <?php endif; ?>
       </a>
     </li>
@@ -93,17 +93,17 @@ if (file_exists(__DIR__ . "/includes/db.php")) {
       </a>
     </li>
     <li>
-      <a href="<?= $base ?>articles/liste_categorie.php?categorie=education" class="<?= ($_GET[
+      <a href="<?= $base ?>articles/liste_categorie.php?categorie=éducation" class="<?= ($_GET[
     "categorie"
 ] ??
     "") ===
-"education"
+"éducation"
     ? "active"
     : "" ?>">
         Éducation
-        <?php if (isset($category_counts["education"])): ?>
+        <?php if (isset($category_counts["éducation"])): ?>
           <span class="category-count"><?= $category_counts[
-              "education"
+              "éducation"
           ] ?></span>
         <?php endif; ?>
       </a>
