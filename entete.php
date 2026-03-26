@@ -3,10 +3,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $pageTitle = isset($pageTitle) ? htmlspecialchars($pageTitle) : "ActuMonde";
-$base = (strpos($_SERVER['PHP_SELF'] ?? '', '/articles/') !== false || strpos($_SERVER['PHP_SELF'] ?? '', '/categories/') !== false || strpos($_SERVER['PHP_SELF'] ?? '', '/utilisateurs/') !== false) ? '../' : '';
-$scriptPath = $_SERVER['SCRIPT_NAME'] ?? '';
-$pathParts = array_filter(explode('/', trim($scriptPath, '/')));
-$appBase = (count($pathParts) > 1) ? '/' . $pathParts[0] : '';
+$base =
+    strpos($_SERVER["PHP_SELF"] ?? "", "/articles/") !== false ||
+    strpos($_SERVER["PHP_SELF"] ?? "", "/categories/") !== false ||
+    strpos($_SERVER["PHP_SELF"] ?? "", "/utilisateurs/") !== false
+        ? "../"
+        : "";
+$scriptPath = $_SERVER["SCRIPT_NAME"] ?? "";
+$pathParts = array_filter(explode("/", trim($scriptPath, "/")));
+$appBase = count($pathParts) > 1 ? "/" . $pathParts[0] : "";
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -14,11 +19,12 @@ $appBase = (count($pathParts) > 1) ? '/' . $pathParts[0] : '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= $pageTitle ?> — ActuMonde</title>
-  <?php $cssVersion = file_exists(__DIR__ . '/static/style.css') ? filemtime(__DIR__ . '/static/style.css') : time(); ?>
+  <?php $cssVersion = file_exists(__DIR__ . "/static/style.css")
+      ? filemtime(__DIR__ . "/static/style.css")
+      : time(); ?>
   <link rel="stylesheet" href="<?= $base ?>static/style.css?v=<?= $cssVersion ?>">
 </head>
 <body>
-
   <header class="site-header" style="display:flex; align-items:center; justify-content:space-between; text-align:left; padding:1rem 2rem;">
     <div style="flex:1;"></div>
     <div style="text-align:center;">
@@ -33,7 +39,7 @@ $appBase = (count($pathParts) > 1) ? '/' . $pathParts[0] : '';
     </div>
   </header>
 
-  <?php require_once __DIR__ . '/menu.php'; ?>
+  <?php require_once __DIR__ . "/menu.php"; ?>
 
 <script>
 window.API_BASE = '<?= $appBase ?>/api';

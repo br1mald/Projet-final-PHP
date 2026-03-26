@@ -38,7 +38,7 @@ async function renderArticleDetails(id) {
   const articleContainer = document.querySelector(".article-details");
   if (!articleContainer) return;
 
-  const img =
+  let img =
     window.IMG_DEFAULT ||
     "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
   if (data.image) img = `${appBase}/${data.image}`;
