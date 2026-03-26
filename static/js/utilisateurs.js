@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiDelete, apiPatch } from "./api.js";
-import { showFormErrors } from "./validation.js";
+import { showFormErrors, escapeHTML } from "./validation.js";
 
 const usersContainer = document.querySelector(".utilisateurs-container");
 const deleteFormContainer = document.querySelector(".delete-form-container");
@@ -17,15 +17,37 @@ async function getUser(id) {
 
 async function getAllUsers() {
   const data = await apiGet(`utilisateurs.php?action=all`);
+
+  // Create a grid wrapper — the CSS class "users-grid" turns this into a responsive card grid
+  const grid = document.createElement("div");
+  grid.className = "users-grid";
+
   data.forEach((user) => {
-    const li = document.createElement("li");
+    // Build two-letter initials for the avatar circle (e.g. "JD" for Jean Dupont)
+    const initials =
+      (user.prenom ? user.prenom[0].toUpperCase() : "U") +
+      (user.nom ? user.nom[0].toUpperCase() : "");
 
-    li.className = "user-name";
-    li.textContent = `${user.nom} ${user.prenom} ${user.login}`;
+    // Pick a badge colour depending on role
+    const badgeClass = user.role === "administrateur" ? "badge-admin" : "badge-editor";
+    const roleLabel = user.role === "administrateur" ? "Administrateur" : "Éditeur";
 
-    usersContainer.appendChild(li);
-    console.log(`found user: ${user.nom}`);
+    const card = document.createElement("div");
+    card.className = "user-card";
+    card.innerHTML = `
+      <div class="user-avatar">
+        <div class="avatar-placeholder">${initials}</div>
+      </div>
+      <div class="user-info">
+        <h3 class="user-name">${escapeHTML(user.prenom)} ${escapeHTML(user.nom)}</h3>
+        <p class="user-login">@${escapeHTML(user.login)}</p>
+        <div class="user-role"><span class="badge ${badgeClass}">${roleLabel}</span></div>
+      </div>
+    `;
+    grid.appendChild(card);
   });
+
+  usersContainer.appendChild(grid);
 }
 
 async function filterUsers(role) {

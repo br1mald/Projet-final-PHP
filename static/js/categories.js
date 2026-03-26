@@ -1,4 +1,4 @@
-import { showFormErrors } from "./validation.js";
+import { showFormErrors, escapeHTML } from "./validation.js";
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api.js";
 
 const categoriesContainer = document.querySelector(".categories-container");
@@ -15,22 +15,35 @@ async function getCategory(id) {
 
 async function getAllCategories() {
   const data = await apiGet(`categories.php?action=all`);
-  data.forEach(async (category) => {
-    const li = document.createElement("li");
 
-    li.className = "category-name";
-    li.textContent = `${category.nom}`;
+  // Create a grid wrapper — the CSS class "categories-grid" turns this into a responsive card grid
+  const grid = document.createElement("div");
+  grid.className = "categories-grid";
 
-    const p = document.createElement("p");
-    const number = await apiGet(
-      `categories.php?action=number_of_articles&id=${category.id}`,
-    );
-    p.textContent = `Nombre d'articles: ${number}`;
+  // Use for...of so we can await the article-count call inside the loop
+  for (const category of data) {
+    // Fetch how many articles belong to this category
+    let count = 0;
+    try {
+      count = await apiGet(`categories.php?action=number_of_articles&id=${category.id}`);
+    } catch (e) { /* leave count as 0 if the call fails */ }
 
-    categoriesContainer.appendChild(li);
-    categoriesContainer.appendChild(p);
-    console.log(`added category: ${category.nom}`);
-  });
+    // Build a card for this category
+    const card = document.createElement("div");
+    card.className = "category-card";
+    card.innerHTML = `
+      <h3 class="category-name">${escapeHTML(category.nom)}</h3>
+      <div class="category-stats">
+        <div class="stat-item">
+          <span class="stat-number">${count}</span>
+          <span class="stat-label"> articles</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+
+  categoriesContainer.appendChild(grid);
 }
 
 function validatePayload(payload, method) {
