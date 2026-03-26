@@ -12,6 +12,7 @@ check_role($role, ["editeur", "administrateur"]);
     <h1>Catégories</h1>
     <div class="actions">
       <a href="ajouter.php" class="btn btn-primary btn-sm">+ Ajouter</a>
+      <a href="supprimer.php" class="btn btn-danger btn-sm">Supprimer</a>
     </div>
   </div>
   <div class="categories-container"></div>

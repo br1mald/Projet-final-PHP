@@ -264,6 +264,18 @@ img {
     justify-content: center;
 }
 
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.user-card .card-actions {
+    margin-left: auto;
+    margin-top: 0;
+}
+
 /* ── STYLES POUR LES FORMULAIRES ── */
 .form-container {
     max-width: 600px;

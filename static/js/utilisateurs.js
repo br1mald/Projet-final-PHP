@@ -41,6 +41,9 @@ async function getAllUsers() {
         <p class="user-login">@${escapeHTML(user.login)}</p>
         <div class="user-role"><span class="badge ${badgeClass}">${roleLabel}</span></div>
       </div>
+      <div class="card-actions">
+        <a href="${window.APP_BASE || ''}/utilisateurs/modifier.php?id=${user.id}" class="btn btn-secondary btn-sm">Modifier</a>
+      </div>
     `;
     grid.appendChild(card);
   });

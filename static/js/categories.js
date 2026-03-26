@@ -31,6 +31,9 @@ async function getAllCategories() {
           <span class="stat-label"> articles</span>
         </div>
       </div>
+      <div class="card-actions">
+        <a href="${window.APP_BASE || ''}/categories/modifier.php?id=${category.id}" class="btn btn-secondary btn-sm">Modifier</a>
+      </div>
     `;
     grid.appendChild(card);
   }

@@ -12,6 +12,7 @@ check_role($role, ["administrateur"]);
     <h1>Gestion des utilisateurs</h1>
     <div class="actions">
       <a href="ajouter.php" class="btn btn-primary btn-sm">+ Ajouter</a>
+      <a href="supprimer.php" class="btn btn-danger btn-sm">Supprimer</a>
     </div>
   </div>
   <div class="utilisateurs-container"></div>
