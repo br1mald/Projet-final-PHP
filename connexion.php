@@ -13,14 +13,7 @@ $pageTitle = "Connexion";
   <div class="form-container">
     <h2>Connexion</h2>
 
-    <?php if (isset($_SESSION["erreur_connexion"])): ?>
-      <div class="alert alert-error">
-        <?= htmlspecialchars($_SESSION["erreur_connexion"]) ?>
-      </div>
-      <?php unset($_SESSION["erreur_connexion"]); ?>
-    <?php endif; ?>
-
-    <form id="formConnexion" action="connexion_traitement.php" method="POST" novalidate>
+    <form id="formConnexion" method="POST" novalidate>
 
       <div class="form-group">
         <label for="login">Login</label>
@@ -54,44 +47,6 @@ $pageTitle = "Connexion";
 
 <?php require_once __DIR__ . "/footer.php"; ?>
 
-<script>
-document.getElementById('formConnexion').addEventListener('submit', function(e) {
-  let valide = true;
-
-  const login = document.getElementById('login');
-  const errLogin = document.getElementById('err-login');
-  if (login.value.trim() === '') {
-    login.classList.add('input-error');
-    errLogin.classList.add('visible');
-    valide = false;
-  } else {
-    login.classList.remove('input-error');
-    errLogin.classList.remove('visible');
-  }
-
-  const mdp = document.getElementById('motdepasse');
-  const errMdp = document.getElementById('err-motdepasse');
-  if (mdp.value.trim() === '') {
-    mdp.classList.add('input-error');
-    errMdp.classList.add('visible');
-    valide = false;
-  } else {
-    mdp.classList.remove('input-error');
-    errMdp.classList.remove('visible');
-  }
-
-  if (!valide) e.preventDefault();
-});
-
-document.getElementById('login').addEventListener('input', function() {
-  this.classList.remove('input-error');
-  document.getElementById('err-login').classList.remove('visible');
-});
-document.getElementById('motdepasse').addEventListener('input', function() {
-  this.classList.remove('input-error');
-  document.getElementById('err-motdepasse').classList.remove('visible');
-});
-</script>
-
+<script type="module" src="/final_project/static/js/auth.js"></script>
 </body>
 </html>
