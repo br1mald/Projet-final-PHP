@@ -31,7 +31,7 @@ if ($method === "GET" && isset($_GET["action"])) {
             break;
         case "search_by_id": // rechercher un article par son id
             $stmt = $pdo->prepare(
-                "SELECT articles.*, categories.nom AS cat_nom, utilisateurs.nom AS util_nom FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id;",
+                "SELECT articles.*, categories.nom AS categorie, CONCAT(utilisateurs.prenom, ' ', utilisateurs.nom) AS auteur FROM articles JOIN utilisateurs ON articles.auteur_id = utilisateurs.id JOIN categories ON articles.categorie_id = categories.id WHERE articles.id = :id",
             );
             $stmt->execute([":id" => $_GET["id"]]); // on prend la valeur envoyée en paramètre comme id
             $article = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -43,9 +43,9 @@ if ($method === "GET" && isset($_GET["action"])) {
                 json_error("Article non trouvé", 400);
             }
             break;
-        case "latest": // affichage des 3 derniers articles (pour accueil.php)
+        case "latest": // affichage des derniers articles (pour accueil.php)
             $stmt = $pdo->query(
-                "SELECT * FROM articles ORDER BY date_publication DESC LIMIT 3;",
+                "SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur, u.nom as util_nom, c.nom as cat_nom FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN utilisateurs u ON a.auteur_id = u.id ORDER BY a.date_publication DESC LIMIT 20",
             );
             $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC); // on envoie les 3 articles les plus récents
 
@@ -71,7 +71,9 @@ if ($method === "GET" && isset($_GET["action"])) {
             }
             break;
         case "all": // récupérer tous les articles (pour modifier.php et supprimer.php)
-            $stmt = $pdo->query("SELECT * FROM articles;");
+            $stmt = $pdo->query(
+                "SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur, u.nom as util_nom, c.nom as cat_nom FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN utilisateurs u ON a.auteur_id = u.id ORDER BY a.date_publication DESC",
+            );
             $all_articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // envoi de la réponse json
@@ -87,21 +89,13 @@ if ($method === "GET" && isset($_GET["action"])) {
             //CREATE
 
             // stockage des données dans des variables php
-            $titre = htmlspecialchars(
-                trim($_POST["title"] ?? ""),
+            $titre = trim($_POST["title"] ?? "");
+            $description = trim(
+                $_POST["description"] ?? "",
                 ENT_QUOTES,
                 "UTF-8",
             );
-            $description = htmlspecialchars(
-                trim($_POST["description"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
-            $contenu = htmlspecialchars(
-                trim($_POST["content"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
+            $contenu = trim($_POST["content"] ?? "");
             $categorie_id = $_POST["category"] ?? null;
             $image_path = null;
 
@@ -188,21 +182,9 @@ if ($method === "GET" && isset($_GET["action"])) {
             // stockage des données dans des variables php
 
             $article_id = $_POST["id"] ?? null;
-            $titre = htmlspecialchars(
-                trim($_POST["titre"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
-            $description = htmlspecialchars(
-                trim($_POST["description"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
-            $contenu = htmlspecialchars(
-                trim($_POST["contenu"] ?? ""),
-                ENT_QUOTES,
-                "UTF-8",
-            );
+            $titre = trim($_POST["titre"] ?? "");
+            $description = trim($_POST["description"] ?? "");
+            $contenu = trim($_POST["contenu"] ?? "");
             $categorie_id = $_POST["categorie_id"] ?? null;
             $image_sql = null;
 
@@ -254,7 +236,7 @@ if ($method === "GET" && isset($_GET["action"])) {
                 }
 
                 if ($file["size"] > 2 * 1024 * 1024) {
-                    json_error("Image trop volumineuse (max 2Mo", 400);
+                    json_error("Image trop volumineuse (max 2Mo)", 400);
                 }
 
                 $ext = pathinfo($file["name"], PATHINFO_EXTENSION);

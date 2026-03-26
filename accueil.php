@@ -1,23 +1,49 @@
 <?php
-
+$pageTitle = "Accueil";
 require_once __DIR__ . "/entete.php";
-require_once __DIR__ . "/menu.php";
 require_once __DIR__ . "/includes/auth.php";
 
 $role = get_role();
 check_role($role, ["visiteur", "editeur", "administrateur"]);
 ?>
 
-<main>
+<script>
+const IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
+</script>
 
-    <input type="search" name="search-bar" placeholder="rechercher"></input>
-    <div class="query-results"></div>
+<main class="container">
+  <?php if (isset($_SESSION['message'])) : ?>
+    <div class="alert alert-<?= htmlspecialchars($_SESSION['type_message'] ?? 'info') ?>">
+      <?= htmlspecialchars($_SESSION['message']) ?>
+    </div>
+    <?php unset($_SESSION['message'], $_SESSION['type_message']); ?>
+  <?php endif; ?>
 
-    <div class="articles-container">
-        <p>Chargement des articles...</p>
+  <div class="main-layout">
+    <div class="main-content">
+      <div class="section-title">À la une</div>
+      <div id="a-la-une-container">
+        <div class="loading-message">Chargement de l'article à la une...</div>
+      </div>
+
+      <div class="section-title">Dernières actualités</div>
+      <div id="dernieres-actualites-container" class="articles-grid-3">
+        <div class="loading-message">Chargement des dernières actualités...</div>
+      </div>
+
+      <div class="section-title">Plus d'actualités</div>
+      <div id="plus-actualites-container" class="article-list">
+        <div class="loading-message">Chargement des actualités...</div>
+      </div>
     </div>
 
-    <div class="pagination"></div>
+    <aside class="sidebar">
+      <div class="sidebar-title">En continu</div>
+      <div id="en-continu-container">
+        <div class="loading-message">Chargement...</div>
+      </div>
+    </aside>
+  </div>
 </main>
 
 <script type="module" src="static/js/articles.js"></script>

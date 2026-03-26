@@ -1,15 +1,32 @@
 import { showFormErrors, escapeHTML } from "./validation.js";
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api.js";
 
-const appBase = "/final_project"; // changer selon la structure du serveur
+const appBase = window.APP_BASE || "/final_project";
 
-const articlesContainer = document.querySelector(".articles-container");
 const formSelectField = document.querySelector(".form-select-field");
 const postForm = document.querySelector(".post-form");
 const editForm = document.querySelector(".edit-article-form");
 const deleteFormContainer = document.querySelector(".delete-form-container");
 
-console.log("Hello"); // debugging, file wasn't loading
+function formatDateFr(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const mois = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+  ];
+  return d.getDate() + " " + mois[d.getMonth()] + " " + d.getFullYear();
+}
 
 async function getArticle(id) {
   const data = await apiGet(`articles.php?action=search_by_id&id=${id}`);
@@ -19,80 +36,192 @@ async function getArticle(id) {
 async function renderArticleDetails(id) {
   const data = await getArticle(id);
   const articleContainer = document.querySelector(".article-details");
-  articleContainer.innerHTML = `<h1>${escapeHTML(data.titre)}</h1> <br>
-    <img src=/final_project/${data.image}> <br>
-    Contenu: ${escapeHTML(data.contenu)} <br>
-    Catégorie: ${escapeHTML(data.cat_nom)} <br>
-    Auteur: ${escapeHTML(data.util_nom)} <br>
-    Date de publication: ${escapeHTML(data.date_publication)}`;
-  console.log("rendered"); // testing
+  if (!articleContainer) return;
+
+  let img =
+    window.IMG_DEFAULT ||
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
+  if (data.image) img = `${appBase}/${data.image}`;
+
+  const categorie = data.categorie || "";
+  const auteur = data.auteur || "";
+  const paragraphes = (data.contenu || "")
+    .split("\n\n")
+    .filter((p) => p.trim());
+  const contentHtml =
+    paragraphes.length > 0
+      ? paragraphes.map((p) => `<p>${escapeHTML(p.trim())}</p>`).join("")
+      : `<p>${escapeHTML(data.contenu || "")}</p>`;
+
+  let editBtns = "";
+  if (window.USER_CAN_EDIT) {
+    editBtns = `<div style="display:flex; gap:0.8rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-light);">
+      <a href="${appBase}/articles/modifier.php?id=${data.id}" class="btn btn-primary btn-sm">Modifier</a>
+      <a href="${appBase}/articles/supprimer.php?id=${data.id}" class="btn btn-danger btn-sm">Supprimer</a>
+    </div>`;
+  }
+
+  articleContainer.innerHTML = `
+    <article class="article-detail">
+      <div class="cat-badge" style="margin-bottom:0.8rem;">${escapeHTML(categorie)}</div>
+      <h1 class="article-title">${escapeHTML(data.titre)}</h1>
+      <div class="article-meta">
+        <span>${escapeHTML(auteur)}</span>
+        <span>${formatDateFr(data.date_publication)}</span>
+      </div>
+      <hr style="border:none; border-top:1px solid var(--border-light); margin-bottom:1.5rem;">
+      <img src="${img}" alt="${escapeHTML(data.titre)}" style="width:100%; height:380px; object-fit:cover; margin-bottom:1.5rem;">
+      <div class="article-content">${contentHtml}</div>
+      <div style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border-light);">
+        <a href="${appBase}/accueil.php" class="btn btn-secondary btn-sm">← Retour à l'accueil</a>
+        ${editBtns}
+      </div>
+    </article>`;
+
+  // Populate "À lire aussi" sidebar with latest articles
+  const similairesContainer = document.getElementById("article-similaires");
+  if (similairesContainer) {
+    try {
+      const allArticles = await apiGet("articles.php?action=all");
+      const others = Array.isArray(allArticles)
+        ? allArticles.filter((a) => a.id != id).slice(0, 5)
+        : [];
+      if (others.length === 0) {
+        similairesContainer.innerHTML =
+          '<div style="color:var(--muted);font-size:.85rem;">Aucun autre article.</div>';
+      } else {
+        const imgDefault =
+          window.IMG_DEFAULT ||
+          "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
+        similairesContainer.innerHTML = others
+          .map((a) => {
+            const time = a.date_publication
+              ? new Date(a.date_publication).toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "";
+            return `<div class="sidebar-item">
+            <div class="sidebar-time">${time}</div>
+            <div class="sidebar-item-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></div>
+            <div class="sidebar-cat">${escapeHTML((a.description || "").substring(0, 100))}${(a.description || "").length > 100 ? "…" : ""}</div>
+          </div>`;
+          })
+          .join("");
+      }
+    } catch (e) {
+      similairesContainer.innerHTML = "";
+    }
+  }
 }
 
 async function getLatestArticles() {
-  // récupère les derniers articles pour les afficher dans accueil.php
-  const data = await apiGet(`articles.php?action=latest`);
-  articlesContainer.innerHTML = "";
-  console.log("Emptied container"); // debugging
-  data.forEach((article) => {
-    const li = document.createElement("li"); // crée un élément li
+  const data = await apiGet(`articles.php?action=all`);
 
-    const a = document.createElement("a");
-    a.className = "article-link";
-    a.href = `./articles/detail.php?id=${article.id}`;
-    a.textContent = article.titre; // le titre est mis sous forme de lien
+  if (!Array.isArray(data) || data.length === 0) {
+    const noArticle =
+      '<div style="text-align:center;color:#888;padding:2rem;">Aucun article disponible.</div>';
+    const c1 = document.getElementById("a-la-une-container");
+    const c2 = document.getElementById("dernieres-actualites-container");
+    if (c1) c1.innerHTML = noArticle;
+    if (c2) c2.innerHTML = noArticle;
+    return;
+  }
 
-    const p = document.createElement("p"); // crée un paragraphe qui contient la description courte
-    p.textContent = article.description;
+  const imgDefault =
+    window.IMG_DEFAULT ||
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
 
-    li.appendChild(a);
-    li.appendChild(p); // on ajoute le titre (lien) et le paragraphe dans le li
+  // À la une (first article)
+  const aLaUneContainer = document.getElementById("a-la-une-container");
+  if (aLaUneContainer) {
+    const a = data[0];
+    const img = a.image || imgDefault;
+    aLaUneContainer.innerHTML = `
+      <div class="article-featured">
+        <img class="featured-img" src="${img}" alt="${escapeHTML(a.titre)}">
+        <div>
+          <div class="featured-category">${escapeHTML(a.categorie || "")}</div>
+          <h2 class="featured-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></h2>
+          <p class="featured-excerpt">${escapeHTML(a.description || "")}</p>
+          <div class="featured-meta">${escapeHTML(a.auteur || "")} | ${formatDateFr(a.date_publication)}</div>
+        </div>
+      </div>`;
+  }
 
-    articlesContainer.appendChild(li); // on ajoute le li (et par conséquent le reste) à articlesContainer
-  });
-}
+  // Dernières actualités (articles 1-3)
+  const dernieresContainer = document.getElementById(
+    "dernieres-actualites-container",
+  );
+  if (dernieresContainer) {
+    const dernieres = data.slice(1, 4);
+    dernieresContainer.innerHTML = dernieres
+      .map((a) => {
+        const img = a.image || imgDefault;
+        return `<article class="article-card-sm">
+        <img class="card-img" src="${img}" alt="${escapeHTML(a.titre)}">
+        <div class="card-category">${escapeHTML(a.categorie || "")}</div>
+        <h3 class="card-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></h3>
+        <div class="card-meta">${escapeHTML(a.auteur || "")} — ${formatDateFr(a.date_publication)}</div>
+      </article>`;
+      })
+      .join("");
+  }
 
-async function getAllArticles() {
-  // processus similaire à getLatestArticles() mais pour récupérer tous les articles
-  // not used
-  const data = await apiGet("articles.php?action=all");
-  articlesContainer.innerHTML = "";
-  console.log("Emptied container"); // debugging
-  data.forEach((article) => {
-    const li = document.createElement("li");
+  // Plus d'actualités (articles 4-8)
+  const plusContainer = document.getElementById("plus-actualites-container");
+  if (plusContainer) {
+    const plus = data.slice(4, 9);
+    plusContainer.innerHTML = plus
+      .map((a) => {
+        const img = a.image || imgDefault;
+        return `<div class="article-list-item">
+        <img src="${img}" alt="${escapeHTML(a.titre)}">
+        <div class="content">
+          <div class="list-category">${escapeHTML(a.categorie || "")}</div>
+          <h3 class="list-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></h3>
+          <div class="list-meta">${escapeHTML(a.auteur || "")} — ${formatDateFr(a.date_publication)}</div>
+        </div>
+      </div>`;
+      })
+      .join("");
+  }
 
-    const a = document.createElement("a");
-    a.className = "article-link";
-    a.href = `./articles/detail.php?id=${article.id}`;
-    a.textContent = article.titre;
-
-    const p = document.createElement("p");
-    p.textContent = article.description;
-
-    li.appendChild(a);
-    li.appendChild(p);
-
-    articlesContainer.appendChild(li);
-  });
-  console.log("All articles rendered"); // testing
+  // En continu sidebar (first 6)
+  const enContinuContainer = document.getElementById("en-continu-container");
+  if (enContinuContainer) {
+    const enContinu = data.slice(0, 6);
+    enContinuContainer.innerHTML = enContinu
+      .map((a) => {
+        const time = a.date_publication
+          ? new Date(a.date_publication).toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "";
+        return `<div class="sidebar-item">
+        <div class="sidebar-time">${time}</div>
+        <div class="sidebar-item-title"><a href="${appBase}/articles/detail.php?id=${a.id}">${escapeHTML(a.titre)}</a></div>
+        <div class="sidebar-cat">${escapeHTML((a.description || "").substring(0, 100))}${(a.description || "").length > 100 ? "…" : ""}</div>
+      </div>`;
+      })
+      .join("");
+  }
 }
 
 async function populateSelectForm() {
-  // permet de charger l'élément qui permet de sélectionner la catégorie
-  const data = await apiGet("categories.php?action=all"); // on récupère toutes les catégories
+  const data = await apiGet("categories.php?action=all");
   data.forEach((category) => {
-    // pour chaque catégorie:
-    const option = document.createElement("option"); // on crée  une option
-    option.textContent = category.nom; // on lui donne pour libellé le nom de la catégorie
-    option.value = category.id; // on lui donne pour valeur l'id de la catégorie
-    formSelectField.appendChild(option); // on l'ajoute au select
+    const option = document.createElement("option");
+    option.textContent = category.nom;
+    option.value = category.id;
+    formSelectField.appendChild(option);
   });
 }
 
 function validatePayload(payload, method) {
-  // permet de faire la validation côté client
   const errors = {};
   if (method === "post") {
-    // pour une requête POST (création)
     if (!payload.titre || payload.titre.trim().length < 3) {
       errors.titre = "Le titre doit contenir au moins 3 caractères";
     }
@@ -107,12 +236,10 @@ function validatePayload(payload, method) {
       errors.categorie_id = "Veuillez choisir une catégorie valide.";
     }
   } else if (method === "delete") {
-    // requête DELETE (suppression)
     if (!payload.articleId || isNaN(Number(payload.articleId))) {
       errors.articleId = "Veuillez choisir un article valide.";
     }
   } else if (method === "patch") {
-    // requête PATCH (modification)
     if (payload.attribute && payload.value && payload.id) {
       if (payload.attribute === "id" && isNaN(Number(payload.value)))
         errors.id = "Article invalide";
@@ -136,49 +263,39 @@ function validatePayload(payload, method) {
         errors.categorie_id = "Veuillez choisir une catégorie valide.";
     } else errors.attributeValue = "Veuillez choisir un attribut";
   }
-
-  return errors; // on renvoie un dictionnaire qui contient les erreurs si il y en a.
+  return errors;
 }
 
 function submitPostForm() {
-  // permettre de soumettre le formulaire
   postForm.addEventListener("submit", async (e) => {
-    // activation lorsque l'utilisateur essaie d'envoyer le formulaire
     e.preventDefault();
 
     const payload = {
-      // le contenu du body de la requête POST
       titre: postForm.title.value,
       description: postForm.description.value,
       contenu: postForm.content.value,
       categorie_id: postForm.category.value,
     };
 
-    const errors = validatePayload(payload, "post"); // on valide le contenu
-    showFormErrors(postForm, errors); // on affiche les erreurs si il y en a
+    const errors = validatePayload(payload, "post");
+    showFormErrors(postForm, errors);
 
-    if (Object.keys(errors).length > 0) return; // si il y a des erreurs on arrête l'exécution de la fonction
+    if (Object.keys(errors).length > 0) return;
 
     const formData = new FormData(e.target);
 
     const req = await fetch("../api/articles.php?action=create", {
       method: "POST",
       body: formData,
-    }); // envoi de la requête
+    });
 
     const res = await req.json();
 
     if (res.ok) {
-      showFormErrors(postForm, { success: "Article ajouté avec succès" }); // affichage d'un message de succès
-      setTimeout(
-        // redirection de l'utilisateur vers accueil.php après un court délai
-        () => (window.location.href = "/final_project/accueil.php"),
-        1000,
-      );
+      showFormErrors(postForm, { success: "Article ajouté avec succès" });
+      setTimeout(() => (window.location.href = appBase + "/accueil.php"), 1000);
     } else {
-      // en cas d'erreur
-      console.error(err);
-      showFormErrors(postForm, { server: err.message || "Erreur serveur" }); // on montre un message d'erreur à l'utilisateur
+      showFormErrors(postForm, { server: res.error || "Erreur serveur" });
     }
   });
 }
@@ -189,7 +306,7 @@ async function populateEditForm() {
 
   if (!id) {
     alert("Aucun article spécifié");
-    window.location.href = "/accueil.php";
+    window.location.href = appBase + "/accueil.php";
     return;
   }
 
@@ -224,19 +341,17 @@ async function populateEditForm() {
     }
   } catch (err) {
     alert("Article introuvable");
-    window.location.href = "/final_project/accueil.php";
+    window.location.href = appBase + "/accueil.php";
     return;
   }
 
-  submitEditForm(); // active la fonction qui permet de soumettre les formulaires une fois qu'ils sont tous générés
+  submitEditForm();
 }
 
 function submitEditForm() {
-  // pour soumettre le formulaire de modification
   editForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Client-side validation
     const titre = editForm.titre.value.trim();
     const description = editForm.description.value.trim();
     const contenu = editForm.contenu.value.trim();
@@ -259,11 +374,10 @@ function submitEditForm() {
       return;
     }
 
-    // envoi de la requête
     const formData = new FormData(editForm);
 
     try {
-      const res = await fetch("/final_project/api/articles.php?action=update", {
+      const res = await fetch(appBase + "/api/articles.php?action=update", {
         method: "POST",
         body: formData,
       });
@@ -271,10 +385,8 @@ function submitEditForm() {
       const data = await res.json();
 
       if (res.ok) {
-        window.location.href =
-          "/final_project/articles/detail.php?id=" + data.id;
+        window.location.href = appBase + "/articles/detail.php?id=" + data.id;
       } else {
-        // si il y a erreur
         showFormErrors(editForm, "Erreur lors de la modification");
       }
     } catch (err) {
@@ -285,90 +397,58 @@ function submitEditForm() {
 }
 
 async function populateDeleteForm() {
-  // permet de générer le formulaire de suppression
-  const data = await apiGet("articles.php?action=all"); // on récupère tous les articles
+  const data = await apiGet("articles.php?action=all");
   data.forEach((article) => {
-    // pour chaque article
-    const form = document.createElement("form"); // on crée un formulaire
-    form.className = "delete-form";
+    const card = document.createElement("div");
+    card.className = "delete-article-card";
 
-    const input = document.createElement("input"); // input qui contient l'id de l'article à supprimer
-    input.type = "hidden";
-    input.name = "article";
-    input.value = article.id;
+    // Title shown to the user
+    const title = document.createElement("span");
+    title.className = "article-title-text";
+    title.textContent = article.titre;
 
-    const submitButton = document.createElement("button"); // bouton de soumission
-    submitButton.type = "submit";
-    submitButton.textContent = article.titre;
-
-    form.appendChild(input);
-    form.appendChild(submitButton);
-
-    deleteFormContainer.appendChild(form); // ajout du formulaire au deleteFormContainer
-  });
-  submitDeleteForm(); // active la fonction qui permet de soumettre les formulaires une fois qu'ils sont tous générés
-}
-
-function submitDeleteForm() {
-  // permet de soumettre le formulaire
-  const deleteForms = document.querySelectorAll(".delete-form"); // might want to do this for the post form too.
-  deleteForms.forEach((deleteForm) => {
-    // pour chaque formulaire de suppression
-    deleteForm.addEventListener("submit", async (e) => {
-      // activation quand l'utilisateur essaie de soumettre le formulaire
-      e.preventDefault();
-      const payload = {
-        // contenu du body de la requête
-        articleId: deleteForm.article.value,
-      };
-
-      const errors = validatePayload(payload, "delete"); // validation client
-      showFormErrors(deleteForm, errors);
-
-      if (Object.keys(errors).length > 0) return;
-
+    // Delete button — calls the API directly, no form needed
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-danger btn-sm";
+    btn.textContent = "Supprimer";
+    btn.addEventListener("click", async () => {
+      if (!confirm(`Supprimer l'article "${article.titre}" ?`)) return;
       try {
-        const res = await apiDelete(`articles.php`, payload); // envoi de la requête
-        console.log("deleted", res);
-        showFormErrors(deleteForm, { success: "Article supprimé avec succès" });
-
-        setTimeout(() => deleteForm.remove(), 1500); // on supprime le formulaire après un court délai en cas de succès
+        await apiDelete("articles.php", { articleId: article.id });
+        card.remove();
       } catch (err) {
-        // en cas d'erreur
-        console.error(err);
-        showFormErrors(deleteForm, { server: err.message || "Erreur serveur" }); // affichage message d'erreur
+        alert(err.message || "Erreur lors de la suppression");
       }
     });
+
+    card.appendChild(title);
+    card.appendChild(btn);
+    deleteFormContainer.appendChild(card);
   });
 }
 
 function searchBar() {
-  // barre de recherche
-  const searchBar = document.querySelector("input[name='search-bar']"); // l'input qui sert de barre de recherche
-  const queryResults = document.querySelector(".query-results"); // div qui va afficher les résultats obtenus
+  const searchBarEl = document.querySelector("input[name='search-bar']");
+  const queryResults = document.querySelector(".query-results");
+  if (!searchBarEl || !queryResults) return;
 
-  searchBar.addEventListener("input", async (e) => {
-    // activation quand l'utilisateur saisit quelque chose
-    const input = e.target.value; // on récupère la valeur saisie
+  searchBarEl.addEventListener("input", async (e) => {
+    const input = e.target.value;
     if (input.trim() === "") {
-      // si input est vide (si l'utilisateur efface tout) on affiche ce message
       queryResults.innerHTML = "<p>Veuillez saisir un mot clé</p>";
       return;
     }
 
-    console.log(input);
     try {
       const articles = await apiGet(
-        // envoi de la requête
         `articles.php?action=search_bar&input=${input}`,
       );
 
       if (articles.length === 0) {
-        // si on n'obtient aucun résultat
         queryResults.innerHTML = "Aucun résultat";
       } else {
-        // on affiche les résultats
-        queryResults.innerHTML = `${articles.map((article) => `<p style='color: green'>${escapeHTML(article.titre)}</p>`).join("")}`;
+        queryResults.innerHTML = `${articles.map((article) => `<p class="search-result-item"><a href="${appBase}/articles/detail.php?id=${article.id}">${escapeHTML(article.titre)}</a></p>`).join("")}`;
       }
     } catch (err) {
       console.error(err);
@@ -376,12 +456,9 @@ function searchBar() {
   });
 }
 
-console.log(window.location.pathname);
 if (window.location.pathname.includes("accueil.php")) {
   getLatestArticles();
-  searchBar();
 }
-// if (window.location.pathname.includes("accueil.php")) getAllArticles(); testing
 
 if (window.location.pathname.includes("detail.php")) {
   const params = new URLSearchParams(window.location.search);
@@ -390,15 +467,15 @@ if (window.location.pathname.includes("detail.php")) {
 }
 
 if (window.location.pathname.includes("/articles/ajouter.php")) {
-  const currentTime = new Date(); // objet de type Date
+  const currentTime = new Date();
   const dateField = document.querySelector(".current-date");
-  dateField.value = currentTime.toISOString().slice(0, 19).replace("T", " "); // permet de formatter la date dans un format accepté par MySQL
-  populateSelectForm(); // active la fonction pour charger les options de catégorie
-  submitPostForm(); // active la fonction qui permet de soumettre le formulaire de création
+  dateField.value = currentTime.toISOString().slice(0, 19).replace("T", " ");
+  populateSelectForm();
+  submitPostForm();
 }
 
 if (window.location.pathname.includes("/articles/supprimer.php"))
-  populateDeleteForm(); // active la fonction qui permet de soumettre le formulaire de suppresssion
+  populateDeleteForm();
 
 if (window.location.pathname.includes("/articles/modifier.php"))
-  populateEditForm(); // active la fonction qui permet de soumettre le formulaire de modification
+  populateEditForm();

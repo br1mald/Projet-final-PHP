@@ -60,7 +60,7 @@ if ($method === "GET" && isset($_GET["action"])) {
         $body = $_POST;
     }
 
-    $nom = htmlspecialchars(trim($body["nom"] ?? ""), ENT_QUOTES, "UTF-8");
+    $nom = trim($body["nom"] ?? "");
 
     $errors = [];
     if ($nom === "" || strlen($nom) < 3) {
@@ -121,11 +121,7 @@ if ($method === "GET" && isset($_GET["action"])) {
     $body = json_decode($raw, true);
 
     $category_id = $body["id"] ?? null;
-    $category_value = htmlspecialchars(
-        trim($body["value"] ?? ""),
-        ENT_QUOTES,
-        "UTF-8",
-    );
+    $category_value = trim($body["value"] ?? "");
 
     $errors = [];
 
