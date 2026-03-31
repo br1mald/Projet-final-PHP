@@ -1,5 +1,5 @@
 import { showFormErrors, escapeHTML } from "./validation.js";
-import { apiGet, apiPost, apiPatch, apiDelete } from "./api.js";
+import { apiGet, apiDelete } from "./api.js";
 
 const appBase = window.APP_BASE || "/final_project";
 
@@ -78,7 +78,6 @@ async function renderArticleDetails(id) {
       </div>
     </article>`;
 
-  // Populate "À lire aussi" sidebar with latest articles
   const similairesContainer = document.getElementById("article-similaires");
   if (similairesContainer) {
     try {
@@ -187,7 +186,7 @@ async function getLatestArticles() {
       .join("");
   }
 
-  // En continu sidebar (first 6)
+  // En continu sidebar (6 premiers)
   const enContinuContainer = document.getElementById("en-continu-container");
   if (enContinuContainer) {
     const enContinu = data.slice(0, 6);
@@ -402,12 +401,10 @@ async function populateDeleteForm() {
     const card = document.createElement("div");
     card.className = "delete-article-card";
 
-    // Title shown to the user
     const title = document.createElement("span");
     title.className = "article-title-text";
     title.textContent = article.titre;
 
-    // Delete button — calls the API directly, no form needed
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "btn btn-danger btn-sm";
@@ -428,36 +425,297 @@ async function populateDeleteForm() {
   });
 }
 
-function searchBar() {
-  const searchBarEl = document.querySelector("input[name='search-bar']");
-  const queryResults = document.querySelector(".query-results");
-  if (!searchBarEl || !queryResults) return;
+const IMAGES_PAR_CATEGORIE = {
+  technologie: [
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=300&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=300&fit=crop&q=80",
+  ],
+  sport: [
+    "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600&h=300&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=300&h=200&fit=crop&q=80",
+  ],
+  education: [
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=400&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&h=300&fit=crop&q=80",
+  ],
+  culture: [
+    "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=300&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=600&h=300&fit=crop&q=80",
+  ],
+  politique: [
+    "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=600&h=300&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=600&h=300&fit=crop&q=80",
+  ],
+  toutes: [
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&h=300&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop&q=80",
+  ],
+};
 
-  searchBarEl.addEventListener("input", async (e) => {
-    const input = e.target.value;
-    if (input.trim() === "") {
-      queryResults.innerHTML = "<p>Veuillez saisir un mot clé</p>";
+function getCategorieActive() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("categorie") || "toutes";
+}
+
+async function filterArticlesByCategory(articles, categorie) {
+  if (categorie === "toutes") return articles;
+  let categories = [];
+  try {
+    categories = await apiGet("categories.php?action=all");
+    if (!Array.isArray(categories)) categories = [];
+  } catch (e) {
+    categories = [];
+  }
+
+  const targetCategory = categories.find(
+    (cat) =>
+      cat.nom.toLowerCase() === categorie.toLowerCase() ||
+      cat.nom
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") ===
+        categorie
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, ""),
+  );
+
+  if (!targetCategory) {
+    return articles.filter((article) => {
+      const articleCategorie = article.categorie
+        ? article.categorie.toLowerCase()
+        : "";
+      const targetCategorie = categorie.toLowerCase();
+      return (
+        articleCategorie.includes(targetCategorie) ||
+        targetCategorie.includes(articleCategorie)
+      );
+    });
+  }
+  return articles.filter((article) => {
+    const articleCategorie = article.categorie
+      ? article.categorie.toLowerCase()
+      : "";
+    return articleCategorie === targetCategory.nom.toLowerCase();
+  });
+}
+
+function getRandomImage(categorie) {
+  const images =
+    IMAGES_PAR_CATEGORIE[categorie] || IMAGES_PAR_CATEGORIE["toutes"];
+  return images[Math.floor(Math.random() * images.length)];
+}
+
+function createArticleCard(article) {
+  const img =
+    article.image_url ||
+    getRandomImage(
+      article.categorie ? article.categorie.toLowerCase() : "toutes",
+    );
+  return `<article class="article-card">
+    <img src="${img}" alt="${escapeHTML(article.titre)}">
+    <div class="article-card-content">
+      <div class="article-category">${escapeHTML(article.categorie || "Non classé")}</div>
+      <h3 class="article-title"><a href="${appBase}/articles/detail.php?id=${article.id}">${escapeHTML(article.titre)}</a></h3>
+      <p class="article-excerpt">${escapeHTML(article.description || "")}</p>
+      <div class="article-meta">
+        <span>${escapeHTML(article.auteur || "Anonyme")}</span>
+        <span>${formatDateFr(article.date_publication)}</span>
+      </div>
+    </div>
+  </article>`;
+}
+
+function createPagination(currentPage, totalPages, categorie) {
+  if (totalPages <= 1) return "";
+  let pagination = "";
+  if (currentPage > 1)
+    pagination += `<a href="?categorie=${categorie}&page=${currentPage - 1}">«</a>`;
+  for (let i = 1; i <= totalPages; i++) {
+    pagination +=
+      i === currentPage
+        ? `<span class="active">${i}</span>`
+        : `<a href="?categorie=${categorie}&page=${i}">${i}</a>`;
+  }
+  if (currentPage < totalPages)
+    pagination += `<a href="?categorie=${categorie}&page=${currentPage + 1}">»</a>`;
+  return pagination;
+}
+
+function updateUICategory(categorie) {
+  const title =
+    categorie === "toutes"
+      ? "Toutes les catégories"
+      : categorie.charAt(0).toUpperCase() + categorie.slice(1);
+  const pageTitle = document.getElementById("page-title");
+  const breadcrumbCategory = document.getElementById("breadcrumb-category");
+  if (pageTitle) pageTitle.textContent = title;
+  if (breadcrumbCategory) breadcrumbCategory.textContent = title;
+}
+
+async function loadArticles() {
+  try {
+    const categorie = getCategorieActive();
+    const params = new URLSearchParams(window.location.search);
+    const currentPage = parseInt(params.get("page")) || 1;
+    const parPage = 3;
+    updateUICategory(categorie);
+
+    let allArticles = await apiGet("articles.php?action=all");
+    if (!Array.isArray(allArticles)) allArticles = [];
+
+    const filteredArticles = await filterArticlesByCategory(
+      allArticles,
+      categorie,
+    );
+    const startIndex = (currentPage - 1) * parPage;
+    const paginatedArticles = filteredArticles.slice(
+      startIndex,
+      startIndex + parPage,
+    );
+    const totalPages = Math.ceil(filteredArticles.length / parPage);
+
+    const container = document.getElementById("articles-container");
+    if (container) {
+      if (paginatedArticles.length === 0) {
+        container.innerHTML =
+          '<div class="loading-message">Aucun article trouvé dans cette catégorie.</div>';
+      } else {
+        container.innerHTML = paginatedArticles
+          .map((article) => createArticleCard(article))
+          .join("");
+      }
+    }
+
+    const paginationContainer = document.getElementById("pagination-container");
+    if (paginationContainer) {
+      paginationContainer.innerHTML = createPagination(
+        currentPage,
+        totalPages,
+        categorie,
+      );
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des articles:", error);
+    const container = document.getElementById("articles-container");
+    if (container)
+      container.innerHTML =
+        '<div class="loading-message">Erreur de chargement. Veuillez réessayer.</div>';
+  }
+}
+
+function searchArticles(articles, searchTerm) {
+  if (!searchTerm) return [];
+  const term = searchTerm.toLowerCase();
+  return articles.filter(
+    (article) =>
+      (article.titre && article.titre.toLowerCase().includes(term)) ||
+      (article.description &&
+        article.description.toLowerCase().includes(term)) ||
+      (article.contenu && article.contenu.toLowerCase().includes(term)) ||
+      (article.categorie && article.categorie.toLowerCase().includes(term)),
+  );
+}
+
+function createFeaturedArticle(article) {
+  const img =
+    article.image_url ||
+    window.IMG_DEFAULT ||
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
+  return `<div class="article-featured">
+    <img src="${img}" alt="${escapeHTML(article.titre)}">
+    <div class="content">
+      <div class="featured-category">${escapeHTML(article.categorie || "Non classé")}</div>
+      <h2 class="featured-title"><a href="${appBase}/articles/detail.php?id=${article.id}">${escapeHTML(article.titre)}</a></h2>
+      <p class="featured-excerpt">${escapeHTML(article.description || "")}</p>
+      <div class="featured-meta">${escapeHTML(article.auteur || "Anonyme")} | ${formatDateFr(article.date_publication)}</div>
+    </div>
+  </div>`;
+}
+
+function createArticleCardSm(article) {
+  const img =
+    article.image_url ||
+    window.IMG_DEFAULT ||
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80";
+  return `<article class="article-card-sm">
+    <img src="${img}" alt="${escapeHTML(article.titre)}">
+    <div class="content">
+      <div class="card-category">${escapeHTML(article.categorie || "Non classé")}</div>
+      <h3 class="card-title"><a href="${appBase}/articles/detail.php?id=${article.id}">${escapeHTML(article.titre)}</a></h3>
+      <div class="card-meta">${escapeHTML(article.auteur || "Anonyme")} — ${formatDateFr(article.date_publication)}</div>
+    </div>
+  </article>`;
+}
+
+async function performSearch() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const searchTerm = params.get("q") ? params.get("q").trim() : "";
+
+    const container = document.getElementById("search-results");
+    if (!container) return;
+
+    if (!searchTerm) {
+      container.innerHTML =
+        '<div class="loading-message">Entrez un mot clé pour rechercher un article.</div>';
       return;
     }
+    let allArticles = await apiGet("articles.php?action=all");
+    if (!Array.isArray(allArticles)) allArticles = [];
 
-    try {
-      const articles = await apiGet(
-        `articles.php?action=search_bar&input=${input}`,
-      );
+    const resultats = searchArticles(allArticles, searchTerm);
 
-      if (articles.length === 0) {
-        queryResults.innerHTML = "Aucun résultat";
-      } else {
-        queryResults.innerHTML = `${articles.map((article) => `<p class="search-result-item"><a href="${appBase}/articles/detail.php?id=${article.id}">${escapeHTML(article.titre)}</a></p>`).join("")}`;
-      }
-    } catch (err) {
-      console.error(err);
+    if (resultats.length === 0) {
+      container.innerHTML = `<div class="search-results-header"><h2>Aucun résultat pour "${escapeHTML(searchTerm)}"</h2><p>Essayez avec d'autres mots-clés ou vérifiez l'orthographe.</p></div>`;
+      return;
     }
-  });
+    let html = `<div class="search-results-header"><h2>${resultats.length} résultat(s) pour "${escapeHTML(searchTerm)}"</h2><p>Articles trouvés dans le titre, la description, le contenu ou la catégorie.</p></div>`;
+    html += createFeaturedArticle(resultats[0]);
+    const secondaires = resultats.slice(1, 4);
+    if (secondaires.length > 0) {
+      html += '<div class="articles-grid-3">';
+      secondaires.forEach((article) => {
+        html += createArticleCardSm(article);
+      });
+      html += "</div>";
+    }
+    const reste = resultats.slice(4);
+    if (reste.length > 0) {
+      html += '<div class="section-title">Plus de résultats</div>';
+      reste.forEach((article) => {
+        html += createArticleCardSm(article);
+      });
+    }
+    container.innerHTML = html;
+  } catch (error) {
+    console.error("Erreur lors de la recherche:", error);
+    const container = document.getElementById("search-results");
+    if (container)
+      container.innerHTML =
+        '<div class="loading-message">Erreur de recherche. Veuillez réessayer.</div>';
+  }
 }
 
 if (window.location.pathname.includes("accueil.php")) {
   getLatestArticles();
+}
+
+if (window.location.pathname.includes("liste_categorie.php")) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadArticles);
+  } else {
+    loadArticles();
+  }
+}
+
+if (window.location.pathname.includes("recherche.php")) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", performSearch);
+  } else {
+    performSearch();
+  }
 }
 
 if (window.location.pathname.includes("detail.php")) {
@@ -469,7 +727,8 @@ if (window.location.pathname.includes("detail.php")) {
 if (window.location.pathname.includes("/articles/ajouter.php")) {
   const currentTime = new Date();
   const dateField = document.querySelector(".current-date");
-  dateField.value = currentTime.toISOString().slice(0, 19).replace("T", " ");
+  if (dateField)
+    dateField.value = currentTime.toISOString().slice(0, 19).replace("T", " ");
   populateSelectForm();
   submitPostForm();
 }

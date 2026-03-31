@@ -7,16 +7,14 @@ $role = get_role();
 check_role($role, ["visiteur", "editeur", "administrateur"]);
 ?>
 
-<script>
-const IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
-</script>
-
 <main class="container">
-  <?php if (isset($_SESSION['message'])) : ?>
-    <div class="alert alert-<?= htmlspecialchars($_SESSION['type_message'] ?? 'info') ?>">
-      <?= htmlspecialchars($_SESSION['message']) ?>
+  <?php if (isset($_SESSION["message"])): ?>
+    <div class="alert alert-<?= htmlspecialchars(
+        $_SESSION["type_message"] ?? "info",
+    ) ?>">
+      <?= htmlspecialchars($_SESSION["message"]) ?>
     </div>
-    <?php unset($_SESSION['message'], $_SESSION['type_message']); ?>
+    <?php unset($_SESSION["message"], $_SESSION["type_message"]); ?>
   <?php endif; ?>
 
   <div class="main-layout">

@@ -18,8 +18,12 @@ async function getAllCategories() {
   for (const category of data) {
     let count = 0;
     try {
-      count = await apiGet(`categories.php?action=number_of_articles&id=${category.id}`);
-    } catch (e) { /* leave count as 0 if the call fails */ }
+      count = await apiGet(
+        `categories.php?action=number_of_articles&id=${category.id}`,
+      );
+    } catch (e) {
+      /* si l'appel échoue count reste à 0 */
+    }
 
     const card = document.createElement("div");
     card.className = "category-card";
@@ -32,7 +36,7 @@ async function getAllCategories() {
         </div>
       </div>
       <div class="card-actions">
-        <a href="${window.APP_BASE || ''}/categories/modifier.php?id=${category.id}" class="btn btn-secondary btn-sm">Modifier</a>
+        <a href="${window.APP_BASE || ""}/categories/modifier.php?id=${category.id}" class="btn btn-secondary btn-sm">Modifier</a>
       </div>
     `;
     grid.appendChild(card);
@@ -64,7 +68,9 @@ function submitPostForm() {
       const res = await apiPost("categories.php", payload);
       showFormErrors(postForm, { success: "Catégorie ajoutée avec succès" });
       setTimeout(
-        () => (window.location.href = (window.APP_BASE || "") + "/categories/liste.php"),
+        () =>
+          (window.location.href =
+            (window.APP_BASE || "") + "/categories/liste.php"),
         1000,
       );
     } catch (err) {
@@ -73,7 +79,6 @@ function submitPostForm() {
   });
 }
 
-// supprimer.php — build a styled card per category with a delete button
 async function loadCategoriesForDeletion() {
   const list = document.getElementById("deleteCategoriesList");
   const loading = document.getElementById("loading");
@@ -117,6 +122,56 @@ async function loadCategoriesForDeletion() {
   }
 }
 
+function handleEditCategoryForm() {
+  const form = document.getElementById("editCategoryForm");
+  const nomInput = document.getElementById("nom");
+  const alertMsg = document.getElementById("alertMsg");
+  const categoryIdEl = document.getElementById("categoryId");
+  if (!form || !nomInput || !alertMsg || !categoryIdEl) return;
+
+  const categoryId = categoryIdEl.value;
+
+  function showAlert(message, isError) {
+    alertMsg.textContent = message;
+    alertMsg.className = isError ? "error-message" : "help-text";
+    alertMsg.style.display = "block";
+  }
+
+  async function loadCategory() {
+    try {
+      const data = await apiGet(
+        `categories.php?action=search&id=${categoryId}`,
+      );
+      nomInput.value = data.nom || "";
+    } catch (err) {
+      showAlert("Impossible de charger la catégorie : " + err.message, true);
+    }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nom = nomInput.value.trim();
+    if (nom.length < 3) {
+      showAlert("Le nom doit contenir au moins 3 caractères.", true);
+      return;
+    }
+    try {
+      await apiPatch("categories.php", { id: categoryId, value: nom });
+      showAlert("Catégorie modifiée avec succès !", false);
+      setTimeout(
+        () =>
+          (window.location.href =
+            (window.APP_BASE || "") + "/categories/liste.php"),
+        1200,
+      );
+    } catch (err) {
+      showAlert("Erreur : " + err.message, true);
+    }
+  });
+
+  loadCategory();
+}
+
 if (window.location.pathname.includes("/categories/liste.php")) {
   getAllCategories();
 }
@@ -124,4 +179,5 @@ if (window.location.pathname.includes("/categories/ajouter.php"))
   submitPostForm();
 if (window.location.pathname.includes("/categories/supprimer.php"))
   loadCategoriesForDeletion();
-
+if (window.location.pathname.includes("/categories/modifier.php"))
+  handleEditCategoryForm();

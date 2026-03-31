@@ -6,11 +6,10 @@ require_once __DIR__ . "/../includes/auth.php";
 $role = get_role();
 check_role($role, ["administrateur"]);
 
-// Redirect back to list if no valid ID is provided
-$id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
+$id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 if ($id <= 0) {
-  header("Location: liste.php");
-  exit;
+    header("Location: liste.php");
+    exit();
 }
 ?>
 
@@ -67,14 +66,12 @@ const form = document.getElementById("editUserForm");
 const alertMsg = document.getElementById("alertMsg");
 const userId = document.getElementById("userId").value;
 
-// Show a coloured message above the form
 function showAlert(message, isError) {
   alertMsg.textContent = message;
   alertMsg.className = isError ? "error-message" : "help-text";
   alertMsg.style.display = "block";
 }
 
-// Load the current user's data and pre-fill the form
 async function loadUser() {
   try {
     const data = await apiGet(`utilisateurs.php?action=search&id=${userId}`);
@@ -87,7 +84,6 @@ async function loadUser() {
   }
 }
 
-// Submit: send one PATCH call per changed field
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -104,7 +100,6 @@ form.addEventListener("submit", async (e) => {
   }
 
   try {
-    // Fire all PATCH calls one after the other
     for (const field of fields) {
       await apiPatch("utilisateurs.php", { id: userId, attribute: field.attribute, value: field.value });
     }
@@ -119,4 +114,3 @@ loadUser();
 </script>
 
 <?php require_once __DIR__ . "/../footer.php"; ?>
-

@@ -47,7 +47,7 @@ if ($method === "GET" && isset($_GET["action"])) {
             $stmt = $pdo->query(
                 "SELECT a.*, c.nom as categorie, CONCAT(u.prenom, ' ', u.nom) as auteur, u.nom as util_nom, c.nom as cat_nom FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN utilisateurs u ON a.auteur_id = u.id ORDER BY a.date_publication DESC LIMIT 20",
             );
-            $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC); // on envoie les 3 articles les plus récents
+            $latest_articles = $stmt->fetchAll(PDO::FETCH_ASSOC); // on envoie les 20 articles les plus récents
 
             // envoi de la réponse en format json
             if ($latest_articles) {

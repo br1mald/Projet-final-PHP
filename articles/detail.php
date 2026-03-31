@@ -1,8 +1,8 @@
 <?php
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 if ($id <= 0) {
-    header('Location: ../accueil.php');
-    exit;
+    header("Location: ../accueil.php");
+    exit();
 }
 
 $pageTitle = "Article";
@@ -11,13 +11,12 @@ require_once __DIR__ . "/../includes/auth.php";
 
 $role = get_role();
 check_role($role, ["visiteur", "editeur", "administrateur"]);
-$canEdit = in_array($role, ['editeur', 'administrateur']);
+$canEdit = in_array($role, ["editeur", "administrateur"]);
 ?>
 
 <script>
 window.ARTICLE_ID = <?= $id ?>;
-window.USER_CAN_EDIT = <?= $canEdit ? 'true' : 'false' ?>;
-window.IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
+window.USER_CAN_EDIT = <?= $canEdit ? "true" : "false" ?>;
 </script>
 
 <main class="container">

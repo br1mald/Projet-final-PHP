@@ -50,7 +50,6 @@ if ($method === "GET" && isset($_GET["action"])) {
     $raw = file_get_contents("php://input");
     $body = json_decode($raw, true);
 
-    // if there is an error with the js script
     if (!is_array($body) || empty($body)) {
         $body = $_POST;
     }

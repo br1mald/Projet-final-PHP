@@ -44,18 +44,20 @@ $appBase = count($pathParts) > 1 ? "/" . $pathParts[0] : "";
 <script>
 window.API_BASE = '<?= $appBase ?>/api';
 window.APP_BASE = '<?= $appBase ?>';
-</script>
-<script>
-document.getElementById('formRechercheHeader')?.addEventListener('submit', function(e) {
-  const champ = document.getElementById('champRechercheHeader');
-  if (champ && champ.value.trim() === '') {
-    champ.style.borderColor = '#b10000';
-    e.preventDefault();
-  } else if (champ) {
-    champ.style.borderColor = '#BBF9FC';
-  }
-});
-document.getElementById('champRechercheHeader')?.addEventListener('input', function() {
-  this.style.borderColor = '#BBF9FC';
+window.IMG_DEFAULT = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=400&fit=crop&q=80';
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('formRechercheHeader')?.addEventListener('submit', function(e) {
+    const champ = document.getElementById('champRechercheHeader');
+    if (champ && champ.value.trim() === '') {
+      champ.style.borderColor = '#b10000';
+      e.preventDefault();
+    } else if (champ) {
+      champ.style.borderColor = '#BBF9FC';
+    }
+  });
+  document.getElementById('champRechercheHeader')?.addEventListener('input', function() {
+    this.style.borderColor = '#BBF9FC';
+  });
 });
 </script>

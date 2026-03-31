@@ -7,28 +7,26 @@ const postForm = document.querySelector(
   "form[action='../api/utilisateurs.php']",
 );
 
-
-async function getUser(id) {
-  const data = await apiGet(`utilisateurs.php?action=search&id=${id}`);
-  return data;
-}
+// async function getUser(id) { pas utilisé
+//   const data = await apiGet(`utilisateurs.php?action=search&id=${id}`);
+//   return data;
+// }
 
 async function getAllUsers() {
   const data = await apiGet(`utilisateurs.php?action=all`);
 
-  // Create a grid wrapper — the CSS class "users-grid" turns this into a responsive card grid
   const grid = document.createElement("div");
   grid.className = "users-grid";
 
   data.forEach((user) => {
-    // Build two-letter initials for the avatar circle (e.g. "JD" for Jean Dupont)
     const initials =
       (user.prenom ? user.prenom[0].toUpperCase() : "U") +
       (user.nom ? user.nom[0].toUpperCase() : "");
 
-    // Pick a badge colour depending on role
-    const badgeClass = user.role === "administrateur" ? "badge-admin" : "badge-editor";
-    const roleLabel = user.role === "administrateur" ? "Administrateur" : "Éditeur";
+    const badgeClass =
+      user.role === "administrateur" ? "badge-admin" : "badge-editor";
+    const roleLabel =
+      user.role === "administrateur" ? "Administrateur" : "Éditeur";
 
     const card = document.createElement("div");
     card.className = "user-card";
@@ -42,7 +40,7 @@ async function getAllUsers() {
         <div class="user-role"><span class="badge ${badgeClass}">${roleLabel}</span></div>
       </div>
       <div class="card-actions">
-        <a href="${window.APP_BASE || ''}/utilisateurs/modifier.php?id=${user.id}" class="btn btn-secondary btn-sm">Modifier</a>
+        <a href="${window.APP_BASE || ""}/utilisateurs/modifier.php?id=${user.id}" class="btn btn-secondary btn-sm">Modifier</a>
       </div>
     `;
     grid.appendChild(card);
@@ -135,7 +133,8 @@ function submitPostForm() {
       console.log("success", res);
       showFormErrors(postForm, { success: "Utilisateur ajouté avec succès" });
       setTimeout(() => {
-        window.location.href = (window.APP_BASE || "") + "/utilisateurs/liste.php";
+        window.location.href =
+          (window.APP_BASE || "") + "/utilisateurs/liste.php";
       }, 1000);
     } catch (err) {
       console.error(err);
@@ -288,12 +287,12 @@ async function populateDeleteForm() {
       info.appendChild(avatar);
       info.appendChild(details);
 
-      // Right: delete button
       const btn = document.createElement("button");
       btn.className = "btn btn-danger btn-sm";
       btn.textContent = "Supprimer";
       btn.addEventListener("click", async () => {
-        const name = `${utilisateur.prenom || ""} ${utilisateur.nom || ""}`.trim();
+        const name =
+          `${utilisateur.prenom || ""} ${utilisateur.nom || ""}`.trim();
         if (!confirm(`Supprimer l'utilisateur "${name}" ?`)) return;
         try {
           await apiDelete("utilisateurs.php", { userId: utilisateur.id });
